@@ -1,0 +1,29 @@
+{
+  "name": "@prodinfo/extension-contracts",
+  "version": "0.1.0-alpha.5",
+  "description": "Experimental ProdInfo command boundary; not a complete extension SDK",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.1.0 <25"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "schemas",
+    "fixtures",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

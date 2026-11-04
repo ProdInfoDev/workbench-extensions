@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "nextIndex": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 512
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1048576
+    },
+    "complete": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "nextIndex",
+    "bytes",
+    "complete"
+  ],
+  "additionalProperties": false
+}

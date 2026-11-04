@@ -1,0 +1,22 @@
+{
+  "name": "workbench-extensions",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.0.8",
+  "engines": {
+    "node": ">=24.1.0 <25"
+  },
+  "scripts": {
+    "build": "pnpm --filter @prodinfo/extension-contracts build",
+    "generate": "pnpm build && node packages/contracts/scripts/schema.mjs",
+    "test": "node --test packages/contracts/test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check": "pnpm format:check && pnpm typecheck && pnpm test && pnpm build && node packages/contracts/scripts/schema.mjs --check",
+    "format:check": "biome format ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.2",
+    "@types/node": "24.1.0",
+    "typescript": "7.0.2"
+  }
+}

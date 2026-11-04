@@ -1,0 +1,7 @@
+{
+  "requestId": "e75ade07-e404-4412-999b-95c9b1e417b9",
+  "operationId": "fixture.echo",
+  "operationVersion": "1.0.0",
+  "input": { "message": "00123" },
+  "workspaceId": "forged"
+}

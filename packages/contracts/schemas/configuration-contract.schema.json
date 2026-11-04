@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "formatVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "fields": {
+      "maxItems": 32,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z][a-zA-Z0-9_]*$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "kind": {
+                "type": "string",
+                "const": "string"
+              },
+              "minLength": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4096
+              },
+              "maxLength": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4096
+              }
+            },
+            "required": [
+              "key",
+              "title",
+              "required",
+              "kind",
+              "minLength",
+              "maxLength"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z][a-zA-Z0-9_]*$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "kind": {
+                "type": "string",
+                "const": "number"
+              },
+              "integer": {
+                "type": "boolean"
+              },
+              "min": {
+                "type": "number",
+                "minimum": -1000000000000000,
+                "maximum": 1000000000000000
+              },
+              "max": {
+                "type": "number",
+                "minimum": -1000000000000000,
+                "maximum": 1000000000000000
+              }
+            },
+            "required": [
+              "key",
+              "title",
+              "required",
+              "kind",
+              "integer",
+              "min",
+              "max"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z][a-zA-Z0-9_]*$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "kind": {
+                "type": "string",
+                "const": "enum"
+              },
+              "values": {
+                "minItems": 1,
+                "maxItems": 32,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 128
+                }
+              }
+            },
+            "required": [
+              "key",
+              "title",
+              "required",
+              "kind",
+              "values"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z][a-zA-Z0-9_]*$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "kind": {
+                "type": "string",
+                "const": "boolean"
+              }
+            },
+            "required": [
+              "key",
+              "title",
+              "required",
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z][a-zA-Z0-9_]*$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "kind": {
+                "type": "string",
+                "const": "resourceRef"
+              }
+            },
+            "required": [
+              "key",
+              "title",
+              "required",
+              "kind"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "formatVersion",
+    "fields"
+  ],
+  "additionalProperties": false
+}

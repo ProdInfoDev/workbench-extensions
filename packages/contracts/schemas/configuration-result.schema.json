@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "valid": {
+      "type": "boolean"
+    },
+    "issues": {
+      "maxItems": 33,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z][a-zA-Z0-9_]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "object_required",
+              "unknown_field",
+              "required",
+              "type",
+              "range",
+              "choice"
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "code"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "valid",
+    "issues"
+  ],
+  "additionalProperties": false
+}
