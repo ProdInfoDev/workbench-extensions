@@ -1,23 +1,15 @@
-# Public extensions working instructions
+# Agent Instructions — `workbench-extensions` (`ProdInfoDev/workbench-extensions`)
 
-Read docs/context.md first. It is the sole current handoff; docs/roadmap.md owns task checkboxes.
-Keep public contract details in their canonical package once implemented and link from author docs.
-Do not create competing schema/type copies or claim a planned SDK is published.
+## Role of This Repository
 
-This repository is public. Add only reviewed public source, docs, schemas and synthetic fixtures.
-Do not copy private host source, credentials, customer samples/history, local absolute paths,
-private Git dependencies or sibling checkout patches. Keep public clone/build/test independent.
+`workbench-extensions` is the **Public MIT Extension Contracts & SDK Repository** (`@prodinfo/extension-contracts`) for the 5-repository ProdInfo Workbench ecosystem.
 
-TypeScript is the application/extension authoring language. The host implementation is private and
-not needed to author against this API. No Rust toolchain requirement or guest Node/SQL/shell access.
-A host must enforce capabilities independently of SDK/types/manifest or publisher trust.
+### Strict Public / MIT Rules
+1. **Public MIT Only**: Everything in this repository is public and MIT-licensed. Never copy proprietary source, internal host implementation details, customer data, or credentials into this repository.
+2. **Self-Contained Build & Tests**: `npm run check` (`pnpm format:check && pnpm typecheck && pnpm test && pnpm build && node packages/contracts/scripts/schema.mjs --check`) must pass without any sibling checkout or private dependency.
+3. **Downstream Pinning**: When `@prodinfo/extension-contracts` is updated and packed, update `vendor/contract-pin.json` in `ProdInfoDev/workbench-core`.
 
-All new destination-specific implementations/profiles/tests belong here. Preserve existing wire
-compatibility via approved public artifacts and synthetic conformance cases; do not invent a second
-Standard Integration API. Record provenance/license before importing legacy code; MIT applies to
-new original material and does not override other license obligations.
-
-Version contracts/SDK and individual extensions independently. Tests against a mock or fixture do
-not establish live-provider/host acceptance. Update context/roadmap and report actual checks with
-completed commits. Package publish, release and marketplace registration require their own scope;
-a source commit alone does not deploy/activate anything.
+### Key Documentation
+- [`docs/context.md`](docs/context.md) — Current state of `@prodinfo/extension-contracts`
+- [`docs/roadmap.md`](docs/roadmap.md) — Public extension contracts & connector SDK roadmap
+- Central ecosystem roadmap & migration status: `../workbench-core/docs/roadmap.md` and `../workbench-core/docs/migration-roadmap.md`
