@@ -3,7 +3,40 @@
   "version": "1.2.0",
   "license": "MIT",
   "source": "available",
+  "depends": ["platform@^1.0.0"],
+  "libraries": [
+    {
+      "name": "@prodinfo/ui",
+      "version": "0.1.0-alpha.8",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "license": "MIT",
+      "source": "available"
+    }
+  ],
+  "systemRolePresets": {
+    "member": {
+      "standard": {
+        "title": "Order operator",
+        "description": "Create and update orders",
+        "permissions": ["x_shop:read", "x_shop:write"]
+      },
+      "read-only": {
+        "title": "Order reader",
+        "permissions": ["x_shop:read"]
+      }
+    },
+    "viewer": {
+      "summary": {
+        "title": "Order summaries",
+        "permissions": ["x_shop:read"]
+      }
+    }
+  },
   "access": {
+    "permissions": [
+      { "id": "x_shop:read", "title": "Read orders", "description": "Read order data" },
+      { "id": "x_shop:write", "title": "Write orders", "description": "Create and edit orders" }
+    ],
     "roles": {
       "editor": { "title": "Orders editor", "description": "Create, edit and cancel orders" }
     },

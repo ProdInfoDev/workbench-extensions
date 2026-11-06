@@ -27,6 +27,16 @@ test("the reference declaration is valid and keeps its public/private split", ()
   const contract = parseModuleContract(valid());
   assert.equal(contract.access.commands["x_shop.order.purge"]?.visibility, "private");
   assert.equal(contract.ui?.slots.homeCards[0]?.id, "x_shop.home.orders");
+  assert.deepEqual(contract.depends, ["platform@^1.0.0"]);
+  assert.equal(contract.libraries[0]?.name, "@prodinfo/ui");
+  assert.deepEqual(Object.keys(contract.systemRolePresets?.member ?? {}), [
+    "standard",
+    "read-only",
+  ]);
+  assert.deepEqual(contract.systemRolePresets?.member.standard?.permissions, [
+    "x_shop:read",
+    "x_shop:write",
+  ]);
 });
 
 test("a declaration with only identity is valid and closed by default", () => {
@@ -120,6 +130,35 @@ test("routine needs: known forms only, own tables for writes, no duplicates", ()
   assert.ok(codes(needs(["net:Bad Host"])).includes("need"));
   assert.ok(codes(needs(["net:a.example", "net:a.example"])).includes("duplicate"));
   assert.deepEqual(needs(["x_shop.orders:read", "ar.invoice.create:call"]), []);
+});
+
+test("libraries are content-pinned and base module dependencies are well formed", () => {
+  assert.ok(codes(problems((m) => (m.libraries[0].digest = "sha256:bad"))).includes("schema"));
+  assert.ok(codes(problems((m) => m.libraries.push({ ...m.libraries[0] }))).includes("duplicate"));
+  assert.ok(codes(problems((m) => (m.depends = ["x_shop@^1.0.0"]))).includes("dependency"));
+  assert.ok(codes(problems((m) => (m.depends = ["core@not-semver"]))).includes("dependency"));
+  assert.ok(
+    codes(problems((m) => (m.depends = ["platform@^1.0.0", "platform@~1.0.0"]))).includes(
+      "duplicate",
+    ),
+  );
+});
+
+test("named system role presets use declared permissions and preserve their names", () => {
+  assert.ok(
+    codes(
+      problems((m) => (m.systemRolePresets.member.standard.permissions = ["x_shop:missing"])),
+    ).includes("system_role_preset"),
+  );
+  assert.ok(
+    codes(
+      problems(
+        (m) => (m.systemRolePresets.member.standard.permissions = ["x_shop:read", "x_shop:read"]),
+      ),
+    ).includes("duplicate"),
+  );
+  const result = checkModuleContract(valid());
+  assert.equal(result.valid, true);
 });
 
 test("UI metadata: ids, routes and capabilities stay inside the module and off host routes", () => {

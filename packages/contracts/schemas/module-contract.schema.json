@@ -70,8 +70,143 @@
       ],
       "additionalProperties": false
     },
+    "depends": {
+      "default": [],
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "libraries": {
+      "default": [],
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^(?:@[a-z0-9][a-z0-9._-]{0,38}\\/)?[a-z0-9][a-z0-9._-]{0,99}$"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "available",
+              "closed"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "digest",
+          "license",
+          "source"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "systemRolePresets": {
+      "type": "object",
+      "properties": {
+        "member": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 90
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "permissions": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*:[a-z0-9_.:-]{1,80}$"
+                }
+              }
+            },
+            "required": [
+              "title",
+              "permissions"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "viewer": {
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 90
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "permissions": {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*:[a-z0-9_.:-]{1,80}$"
+                }
+              }
+            },
+            "required": [
+              "title",
+              "permissions"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "member",
+        "viewer"
+      ],
+      "additionalProperties": false
+    },
     "access": {
       "default": {
+        "permissions": [],
         "roles": {},
         "commands": {},
         "views": {},
@@ -80,6 +215,36 @@
       },
       "type": "object",
       "properties": {
+        "permissions": {
+          "default": [],
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*:[a-z0-9_.:-]{1,80}$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 90
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "description"
+            ],
+            "additionalProperties": false
+          }
+        },
         "roles": {
           "default": {},
           "type": "object",
@@ -313,6 +478,7 @@
         }
       },
       "required": [
+        "permissions",
         "roles",
         "commands",
         "views",
@@ -621,6 +787,8 @@
     "version",
     "license",
     "source",
+    "depends",
+    "libraries",
     "access",
     "routines"
   ],

@@ -11,11 +11,11 @@ Legacy migration roadmap: `../workbench-core/docs/migration-roadmap.md`.
 - **C2a (`0.1.0-alpha.4`)**: Execution effect declarations (`submit`, `controlRun`) and admission result types.
 - **M-Files (`0.1.0-alpha.5`)**: Managed routine text file streaming page/call/ack schemas (`packages/contracts/src/files.ts`).
 - **M-Contract-Draft ([`docs/module-contract.md`](module-contract.md))**: Public module contract specification for system roles (`owner`, `admin`, `member`, `viewer`), optional module roles, `visibility: public | private`, routine `needs`, and declarative UI slots (`screens`, `navLinks`, `homeCards`, `settingsCards`, `reviewCards`).
+- **EXT-1a — Contract libraries, base modules & role presets (`0.1.0-alpha.8`)**: `libraries` are code-only package pins with digests/licenses/source, base modules use checked `depends` ranges, and named member/viewer `systemRolePresets` are schema-checked against module permissions.
 
 ## Upcoming Milestones
 
-- **EXT-1 — Public Module, Connector & Routine Authoring SDK (`0.2.0`)**:
-  - Executable Zod/JSON schemas and conformance fixtures for [`docs/module-contract.md`](module-contract.md) (`access`, `visibility`, `routines[].needs`, declarative `ui` slots).
+- **EXT-1b — Public Module, Connector & Routine Authoring SDK**:
   - Typed TypeScript helper builders for declaring connection types, reference caches, record schemas, output templates, and idempotent delivery receipts using only public MIT types.
 - **EXT-2 — Marketplace Connector Conformance Fixtures (`M-EXT-1`)**:
   - Publish synthetic request/response conformance fixtures and MIT TypeScript connector templates for the 7 remaining marketplace targets from legacy `productinfo-destinations` (`shopify`, `ebay`, `amazon`, `allegro`, `mercadolibre`, `mozello`, `prestashop`).

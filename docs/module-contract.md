@@ -31,7 +31,30 @@ refinements and may be added in later module versions.
   "version": "1.2.0",
   "license": "MIT",
   "source": "available",
+  "depends": ["platform@^1.0.0"],
+  "libraries": [
+    {
+      "name": "@prodinfo/ui",
+      "version": "0.1.0",
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "license": "MIT",
+      "source": "available"
+    }
+  ],
+  "systemRolePresets": {
+    "member": {
+      "standard": { "title": "Full access", "permissions": ["x_shop:read", "x_shop:write"] },
+      "read-only": { "title": "Look only", "permissions": ["x_shop:read"] }
+    },
+    "viewer": {
+      "summary": { "title": "Order summaries", "permissions": ["x_shop:read"] }
+    }
+  },
   "access": {
+    "permissions": [
+      { "id": "x_shop:read", "title": "Read orders", "description": "Read order data" },
+      { "id": "x_shop:write", "title": "Write orders", "description": "Create and edit orders" }
+    ],
     "roles": {
       "editor": { "title": "Orders editor", "description": "Create, edit and cancel orders" }
     },
@@ -83,6 +106,10 @@ refinements and may be added in later module versions.
 
 | Field | Meaning |
 |---|---|
+| `depends` | Required base modules, optionally pinned by a version range as `<module>@^1.0.0`; module-to-module dependency grants no access to the base module's data. |
+| `libraries` | Code-only packages bundled into the module. Each entry pins its package name, version, `sha256:` digest, license and source availability; a library has no tables, commands, views, permissions or UI of its own. |
+| `systemRolePresets` | Named permission sets for `member` and `viewer`. The first preset listed for a role is that role's module default; hosts may offer the remaining presets in Roles & permissions. |
+| `access.permissions` | Permission identifiers and labels a module's resources use; preset permissions must refer to these declarations. |
 | `access.roles` | Optional module roles; the host namespaces them (`x_shop.editor`). |
 | `visibility` | `public` items are the module's versioned contract; `private` (default) are internal. |
 | `call` / `read` / `write` / `subscribe` | Which system roles (`member`, `viewer`) and module roles may do it. `owner` always may; `[]` means owner only. |
@@ -130,6 +157,8 @@ person who created the key.
 | Who-lists name only `member`, `viewer` and the module's own declared roles as `<module>.<role>`; never `owner` or `admin`, never another module's role | `system_role`, `unknown_role`, `foreign_role` |
 | A `viewer` is never listed for a command that changes state, a table `write`, or a routine `run` | `viewer_write` |
 | `ai: auto` only for `read`, `configure`, `createArtifact`; a private item may only say `ai: never` | `ai_level`, `private_ai` |
+| Library package names are unique, and each package has a semantic version, content digest, license and source availability; base module ids and version ranges are valid and unique | `schema`, `duplicate`, `dependency` |
+| Preset names are valid, permissions are unique and every preset permission is declared by the module | `schema`, `duplicate`, `system_role_preset` |
 | Routine `needs` use `<id>:call`, `<id>:read`, `<table>:write` (own tables only), `connection:<id>:use` or `net:<host>`, without repeats | `need`, `duplicate` |
 | Screens do not take host routes (`/admin`, `/api`, `/extensions`, `/login`, `/review`, `/settings`, `/v1`); screens, links and cards require only the module's own `<module>:` capabilities; UI ids are unique | `route`, `capability`, `duplicate` |
 | `docs.context` is a relative path inside the module | `docs_path` |

@@ -50,6 +50,10 @@ const roleLocalId = z.string().regex(/^[a-z][a-z0-9_]{0,31}$/);
 const text = (max: number) => z.string().trim().min(1).max(max);
 const version = z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
 const capability = z.string().regex(/^[a-z][a-z0-9_]*:[a-z0-9_.:-]{1,80}$/);
+const permissionId = z.string().regex(/^[a-z][a-z0-9_]*:[a-z0-9_.:-]{1,80}$/);
+const packageName = z
+  .string()
+  .regex(/^(?:@[a-z0-9][a-z0-9._-]{0,38}\/)?[a-z0-9][a-z0-9._-]{0,99}$/);
 /** Command, table, view, event and routine ids: dotted lowercase words. */
 const dotted = z.string().regex(/^[a-z][a-z0-9_]*(?:\.[a-z0-9_-]+)+$/);
 
@@ -58,6 +62,29 @@ const effect = z.enum(COMMAND_EFFECTS);
 const ai = z.enum(AI_LEVELS);
 /** `member`, `viewer`, or a module role as `<module>.<role>`; validated against the module. */
 const who = z.array(z.string().min(1).max(80)).max(20);
+
+/** A code-only package pinned into a module bundle; it grants no host access. */
+export const LibraryReferenceSchema = z.strictObject({
+  name: packageName,
+  version,
+  digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  license: text(64),
+  source: z.enum(["available", "closed"]),
+});
+export type LibraryReference = z.infer<typeof LibraryReferenceSchema>;
+
+const presetId = z.string().regex(/^[a-z][a-z0-9_-]{0,39}$/);
+const systemRolePreset = z.strictObject({
+  title: text(90),
+  description: text(600).optional(),
+  permissions: z.array(permissionId).max(100),
+});
+/** First named preset for each role is the module default. */
+export const SystemRolePresetsSchema = z.strictObject({
+  member: z.record(presetId, systemRolePreset).default({}),
+  viewer: z.record(presetId, systemRolePreset).default({}),
+});
+export type SystemRolePresets = z.infer<typeof SystemRolePresetsSchema>;
 
 const commandSpec = z.strictObject({
   visibility,
@@ -95,6 +122,10 @@ const routineSpec = z.strictObject({
 const roleSpec = z.strictObject({ title: text(90), description: text(600) });
 
 const accessSpec = z.strictObject({
+  permissions: z
+    .array(z.strictObject({ id: permissionId, title: text(90), description: text(600) }))
+    .max(100)
+    .default([]),
   roles: z.record(roleLocalId, roleSpec).default({}),
   commands: z.record(dotted, commandSpec).default({}),
   views: z.record(dotted, viewSpec).default({}),
@@ -155,7 +186,20 @@ export const ModuleContractSchema = z.strictObject({
   license: text(64),
   source: z.enum(["available", "closed"]),
   provenance: ProvenanceSchema.optional(),
-  access: accessSpec.default({ roles: {}, commands: {}, views: {}, tables: {}, events: {} }),
+  /** Required base modules, optionally with a semantic version range (`module@^1.0.0`). */
+  depends: z.array(z.string().trim().min(1).max(120)).max(100).default([]),
+  /** Code-only package dependencies, pinned by version and content digest. */
+  libraries: z.array(LibraryReferenceSchema).max(50).default([]),
+  /** Named permission presets; the first entry for each role is its module default. */
+  systemRolePresets: SystemRolePresetsSchema.optional(),
+  access: accessSpec.default({
+    permissions: [],
+    roles: {},
+    commands: {},
+    views: {},
+    tables: {},
+    events: {},
+  }),
   routines: z.array(routineSpec).max(50).default([]),
   ui: ModuleUiMetadataSchema.optional(),
   docs: z.strictObject({ context: text(200) }).optional(),
@@ -182,7 +226,9 @@ export interface ModuleContractIssue {
     | "capability"
     | "duplicate"
     | "provenance"
-    | "docs_path";
+    | "docs_path"
+    | "dependency"
+    | "system_role_preset";
   readonly message: string;
 }
 
@@ -251,6 +297,51 @@ export function checkModuleContract(raw: unknown): {
     name.startsWith(`${c.id}.`) ||
     (allowSchemaVersion && new RegExp(`^${c.id}_v\\d+\\.`).test(name));
   const roles = new Set(Object.keys(c.access.roles));
+  const permissionIds = new Set<string>();
+  c.access.permissions.forEach((permission, index) => {
+    if (!permission.id.startsWith(`${c.id}:`))
+      add(`access.permissions.${index}.id`, "prefix", `Permission ids must start with ${c.id}:`);
+    if (permissionIds.has(permission.id))
+      add(`access.permissions.${index}.id`, "duplicate", "Duplicate permission id");
+    permissionIds.add(permission.id);
+  });
+  const libraryNames = new Set<string>();
+  c.libraries.forEach((library, index) => {
+    if (libraryNames.has(library.name))
+      add(`libraries.${index}.name`, "duplicate", `Library ${library.name} is listed twice`);
+    libraryNames.add(library.name);
+  });
+  const dependencies = new Set<string>();
+  c.depends.forEach((raw, index) => {
+    const at = raw.indexOf("@");
+    const id = at > 0 ? raw.slice(0, at) : raw;
+    const range = at > 0 ? raw.slice(at + 1) : "*";
+    const rangeParts = range.split(/\s+/).filter(Boolean);
+    const validRange =
+      range === "*" ||
+      range === "latest" ||
+      (rangeParts.length > 0 &&
+        rangeParts.every((part) =>
+          /^(?:\^|~|>=|<=|>|<|=)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(part),
+        ));
+    if (!moduleId.safeParse(id).success || !validRange || id === c.id)
+      add(`depends.${index}`, "dependency", `${raw} is not a valid base module dependency`);
+    if (dependencies.has(id))
+      add(`depends.${index}`, "duplicate", `Base module ${id} is listed twice`);
+    dependencies.add(id);
+  });
+  if (c.systemRolePresets) {
+    for (const role of ["member", "viewer"] as const) {
+      for (const [name, preset] of Object.entries(c.systemRolePresets[role])) {
+        const path = `systemRolePresets.${role}.${name}.permissions`;
+        if (new Set(preset.permissions).size !== preset.permissions.length)
+          add(path, "duplicate", "A permission is listed twice in this preset");
+        for (const permission of preset.permissions)
+          if (!permissionIds.has(permission))
+            add(path, "system_role_preset", `${permission} is not a declared module permission`);
+      }
+    }
+  }
   const roleList = (path: string, list: readonly string[]) => {
     for (const entry of list) {
       if (entry === "owner" || entry === "admin") {

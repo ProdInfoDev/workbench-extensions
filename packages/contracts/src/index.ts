@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.7";
+export const CONTRACT_VERSION = "0.1.0-alpha.8";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -130,12 +130,14 @@ export {
   AI_AUTO_EFFECTS,
   AI_LEVELS,
   COMMAND_EFFECTS,
+  LibraryReferenceSchema,
   LISTABLE_SYSTEM_ROLES,
   ModuleContractSchema,
   ModuleUiMetadataSchema,
   ProvenanceSchema,
   RESERVED_ROUTE_PREFIXES,
   SYSTEM_ROLES,
+  SystemRolePresetsSchema,
   VISIBILITIES,
   canForkModule,
   checkModuleContract,
@@ -143,10 +145,12 @@ export {
   parseModuleContract,
   writableTables,
   type AiLevel,
+  type LibraryReference,
   type ModuleContract,
   type ModuleContractIssue,
   type ModuleNotificationMetadata,
   type ModuleUiMetadata,
   type SystemRole,
+  type SystemRolePresets,
   type Visibility,
 } from "./module-contract.ts";

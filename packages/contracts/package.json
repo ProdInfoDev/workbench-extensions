@@ -1,6 +1,6 @@
 {
   "name": "@prodinfo/extension-contracts",
-  "version": "0.1.0-alpha.7",
+  "version": "0.1.0-alpha.8",
   "description": "Experimental ProdInfo command boundary; not a complete extension SDK",
   "type": "module",
   "license": "MIT",
