@@ -17,5 +17,6 @@ Last updated: 2026-11-06.
   - `resources.ts`: Managed text resource references, roots, read/create payloads, and artifact effect boundaries.
   - `configuration.ts`: Declarative configuration contracts, field bounds, secret references, and non-coercing validation results.
   - `files.ts`: Managed routine text file pages, calls, and acknowledgements preserving Unicode/BOM/CRLF.
+  - `module-contract.ts`: executable module contract (`ModuleContractSchema`, `checkModuleContract`, `writableTables`, `effectiveAiLevel`, `canForkModule`) with fixtures (`module-contract-valid.json`, `module-contract-fork.json`) and the generated `module-contract.schema.json`. Not yet released as a new package version; hosts adopt it by re-pinning.
 - **Verification**:
   - `npm run check` runs Biome format check, TypeScript typecheck, 14 contract tests (`packages/contracts/test/*.test.ts`), build, and JSON Schema drift verification (`packages/contracts/schemas/*.schema.json`).

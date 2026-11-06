@@ -125,3 +125,27 @@ export {
   type FileCall,
   type RoutineFiles,
 } from "./files.ts";
+
+export {
+  AI_AUTO_EFFECTS,
+  AI_LEVELS,
+  COMMAND_EFFECTS,
+  LISTABLE_SYSTEM_ROLES,
+  ModuleContractSchema,
+  ModuleUiMetadataSchema,
+  ProvenanceSchema,
+  RESERVED_ROUTE_PREFIXES,
+  SYSTEM_ROLES,
+  VISIBILITIES,
+  canForkModule,
+  checkModuleContract,
+  effectiveAiLevel,
+  parseModuleContract,
+  writableTables,
+  type AiLevel,
+  type ModuleContract,
+  type ModuleContractIssue,
+  type ModuleUiMetadata,
+  type SystemRole,
+  type Visibility,
+} from "./module-contract.ts";

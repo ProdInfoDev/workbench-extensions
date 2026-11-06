@@ -1,0 +1,97 @@
+{
+  "id": "x_shop",
+  "version": "1.2.0",
+  "license": "MIT",
+  "source": "available",
+  "access": {
+    "roles": {
+      "editor": { "title": "Orders editor", "description": "Create, edit and cancel orders" }
+    },
+    "commands": {
+      "x_shop.order.list": {
+        "visibility": "public",
+        "effect": "read",
+        "call": ["viewer", "member"],
+        "ai": "auto"
+      },
+      "x_shop.order.create": {
+        "visibility": "public",
+        "effect": "configure",
+        "call": ["member"],
+        "ai": "confirm"
+      },
+      "x_shop.order.cancel": {
+        "visibility": "public",
+        "effect": "configure",
+        "call": ["x_shop.editor"],
+        "ai": "confirm"
+      },
+      "x_shop.order.publish": {
+        "visibility": "public",
+        "effect": "submit",
+        "call": ["x_shop.editor"]
+      },
+      "x_shop.order.purge": {
+        "visibility": "private",
+        "effect": "configure",
+        "call": [],
+        "ai": "never"
+      }
+    },
+    "views": {
+      "x_shop_v1.orders": { "visibility": "public", "read": ["viewer", "member"] }
+    },
+    "tables": {
+      "x_shop.orders": { "read": ["member"], "write": ["x_shop.editor"], "ai": "confirm" },
+      "x_shop.log": { "read": [] }
+    },
+    "events": {
+      "x_shop.order.created": { "visibility": "public", "subscribe": ["member"] }
+    }
+  },
+  "routines": [
+    {
+      "id": "x_shop.sync_orders",
+      "title": "Sync orders",
+      "run": ["member"],
+      "needs": [
+        "x_shop.orders:write",
+        "ar.invoice.create:call",
+        "connection:shop-api:use",
+        "net:api.shop.example"
+      ]
+    }
+  ],
+  "ui": {
+    "screens": [
+      {
+        "id": "x_shop.orders",
+        "route": "/shop/orders",
+        "title": "Orders",
+        "navGroup": "Sales",
+        "requiredCapabilities": ["x_shop:read"]
+      }
+    ],
+    "navLinks": [
+      {
+        "id": "x_shop.customers-link",
+        "route": "/parties",
+        "title": "Customers",
+        "navGroup": "Sales",
+        "requiredCapabilities": ["x_shop:read"]
+      }
+    ],
+    "slots": {
+      "homeCards": [
+        { "id": "x_shop.home.orders", "title": "Orders summary", "requiredCapabilities": ["x_shop:read"] }
+      ],
+      "settingsCards": [
+        { "id": "x_shop.settings.policy", "title": "Shop preferences", "requiredCapabilities": ["x_shop:write"] }
+      ],
+      "reviewCards": [
+        { "id": "x_shop.review.pending", "title": "Pending orders", "requiredCapabilities": ["x_shop:write"] }
+      ]
+    }
+  },
+  "docs": { "context": "docs/context.md" }
+}

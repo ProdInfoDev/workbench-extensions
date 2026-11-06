@@ -1,7 +1,9 @@
 # Module contract: public API, roles and access — draft
 
-Status: **draft for review**, not an executable contract yet. Like the other drafts in this folder,
-the names below are proposals until they have a schema, fixtures and host conformance tests.
+Status: **executable**. `checkModuleContract` in `@prodinfo/extension-contracts` (`packages/contracts/src/module-contract.ts`)
+enforces the rules below; `schemas/module-contract.schema.json` describes the shape, and
+`fixtures/module-contract-valid.json` / `module-contract-fork.json` are the reference declarations.
+Host conformance tests (a host refusing to load a module with any issue) live in the host repositories.
 
 ## Idea
 
@@ -34,9 +36,9 @@ refinements and may be added in later module versions.
       "editor": { "title": "Orders editor", "description": "Create, edit and cancel orders" }
     },
     "commands": {
-      "x_shop.order.create": { "visibility": "public",  "effect": "correctable",  "call": ["member"],        "ai": "confirm" },
-      "x_shop.order.cancel": { "visibility": "public",  "effect": "correctable",  "call": ["x_shop.editor"], "ai": "confirm" },
-      "x_shop.order.purge":  { "visibility": "private", "effect": "irreversible", "call": [],                "ai": "never" }
+      "x_shop.order.create": { "visibility": "public",  "effect": "configure",    "call": ["member"],        "ai": "confirm" },
+      "x_shop.order.cancel": { "visibility": "public",  "effect": "configure",    "call": ["x_shop.editor"], "ai": "confirm" },
+      "x_shop.order.purge":  { "visibility": "private", "effect": "configure",    "call": [],                "ai": "never" }
     },
     "views":  { "x_shop_v1.orders": { "visibility": "public", "read": ["viewer", "member"] } },
     "tables": {
@@ -75,7 +77,8 @@ refinements and may be added in later module versions.
 | `visibility` | `public` items are the module's versioned contract; `private` (default) are internal. |
 | `call` / `read` / `write` / `subscribe` | Which system roles (`member`, `viewer`) and module roles may do it. `owner` always may; `[]` means owner only. |
 | `tables.*.write` | Only tables listed with `write` are writable outside the module's own code. |
-| `ai` | How the AI console may do it for the person: `auto`, `confirm`, `never`. |
+| `effect` | The command boundary's effect: `read`, `configure`, `createArtifact`, `submit`, `controlRun`. |
+| `ai` | How the AI console may do it for the person: `auto`, `confirm`, `never`. Undeclared: `confirm` for public items, `never` for private ones. |
 | `routines[].needs` | Exactly what the routine may do; approved by an owner or admin on activation. |
 | `ui.screens` / `ui.navLinks` | Screens and cross-group navigation links contributed to the host's common shell menu groups (`navGroup`), filtered by `requiredCapabilities`. |
 | `ui.slots.{homeCards,settingsCards,reviewCards}` | Cards contributed to the host's Home dashboard, Settings page, and Review queue, filtered by `requiredCapabilities`. |
@@ -95,7 +98,9 @@ person who created the key.
    it: Ask/Diagnose read only, Operate within grants and `ai`, Develop only in a sandbox.
 3. **The console may read module databases** the person may read: read-only, logged, never secrets
    (password hashes, sessions, tokens, credentials).
-4. `ai: auto` is accepted only for correctable effects; irreversible and external effects always ask.
+4. `ai: auto` is accepted only for `read`, `configure` and `createArtifact`, which stay inside the
+   workspace and can be reviewed or undone; `submit` (sends or files something outside) and
+   `controlRun` always ask. A private item is never available to the AI (`ai: never`).
 5. **A module grants only on its own resources** and cannot widen host rules.
 6. **Routines run with exactly their approved `needs`**; a changed `needs` or a lost approver
    suspends the routine until approved again.
@@ -104,6 +109,27 @@ person who created the key.
 8. **Production changes only through promotion** (sandbox tests, rehearsal on a production copy,
    release with a restore point and an owner's approval). Review shows public-contract and access
    changes; loosening access needs explicit approval.
+
+## What `checkModuleContract` enforces
+
+| Rule | Issue code |
+|---|---|
+| Shape: ids, versions, `visibility` (default `private`), no unknown fields, bounded JSON | `schema` |
+| Commands, tables, events, routines, screens, links and cards carry the module's own id prefix; views use `<module>.` or `<module>_v<N>.` | `prefix` |
+| Who-lists name only `member`, `viewer` and the module's own declared roles as `<module>.<role>`; never `owner` or `admin`, never another module's role | `system_role`, `unknown_role`, `foreign_role` |
+| A `viewer` is never listed for a command that changes state, a table `write`, or a routine `run` | `viewer_write` |
+| `ai: auto` only for `read`, `configure`, `createArtifact`; a private item may only say `ai: never` | `ai_level`, `private_ai` |
+| Routine `needs` use `<id>:call`, `<id>:read`, `<table>:write` (own tables only), `connection:<id>:use` or `net:<host>`, without repeats | `need`, `duplicate` |
+| Screens do not take host routes (`/admin`, `/api`, `/extensions`, `/login`, `/review`, `/settings`, `/v1`); screens, links and cards require only the module's own `<module>:` capabilities; UI ids are unique | `route`, `capability`, `duplicate` |
+| `docs.context` is a relative path inside the module | `docs_path` |
+| A fork has its own `x_` id, records its origin (module, version, `sha256:` digest, license) and only comes from a module whose source is `available` and whose license is not closed | `provenance` |
+
+`writableTables(contract)` returns the tables that list `write` and who may write; `effectiveAiLevel`
+applies the default `ai` for an item; `canForkModule` is the fork test.
+
+A host that has not adopted the contract yet may treat undeclared visibility as `public` while
+modules migrate (core does, and offers a stricter authoring check); the contract itself defaults to
+`private`.
 
 ## Documentation is generated from the contract
 
