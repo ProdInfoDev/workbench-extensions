@@ -52,6 +52,19 @@ refinements and may be added in later module versions.
       "needs": ["x_shop.orders:write", "connection:shop-api:use", "net:api.shop.example"]
     }
   ],
+  "ui": {
+    "screens": [
+      { "id": "x_shop.orders", "route": "/shop/orders", "title": "Orders", "navGroup": "Sales", "requiredCapabilities": ["x_shop:read"] }
+    ],
+    "navLinks": [
+      { "id": "x_shop.customers-link", "route": "/parties", "title": "Customers", "navGroup": "Sales", "requiredCapabilities": ["x_shop:read"] }
+    ],
+    "slots": {
+      "homeCards":     [{ "id": "x_shop.home.orders",     "title": "Orders summary",   "requiredCapabilities": ["x_shop:read"] }],
+      "settingsCards": [{ "id": "x_shop.settings.policy", "title": "Shop preferences", "requiredCapabilities": ["x_shop:write"] }],
+      "reviewCards":   [{ "id": "x_shop.review.pending",  "title": "Pending orders",   "requiredCapabilities": ["x_shop:write"] }]
+    }
+  },
   "docs": { "context": "docs/context.md" }
 }
 ```
@@ -64,6 +77,8 @@ refinements and may be added in later module versions.
 | `tables.*.write` | Only tables listed with `write` are writable outside the module's own code. |
 | `ai` | How the AI console may do it for the person: `auto`, `confirm`, `never`. |
 | `routines[].needs` | Exactly what the routine may do; approved by an owner or admin on activation. |
+| `ui.screens` / `ui.navLinks` | Screens and cross-group navigation links contributed to the host's common shell menu groups (`navGroup`), filtered by `requiredCapabilities`. |
+| `ui.slots.{homeCards,settingsCards,reviewCards}` | Cards contributed to the host's Home dashboard, Settings page, and Review queue, filtered by `requiredCapabilities`. |
 
 Anything not declared is readable by `owner` only and writable by nobody but the module's own code.
 Public views are readable by `viewer` and `member` unless the module narrows them. A `viewer` can

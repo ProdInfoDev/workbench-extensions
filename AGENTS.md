@@ -11,5 +11,6 @@
 
 ### Key Documentation
 - [`docs/context.md`](docs/context.md) — Current state of `@prodinfo/extension-contracts`
+- [`docs/module-contract.md`](docs/module-contract.md) — Public module contract specification (4 system roles `owner`, `admin`, `member`, `viewer`, `visibility: public | private`, `routines[].needs`, and declarative UI slots)
 - [`docs/roadmap.md`](docs/roadmap.md) — Public extension contracts & connector SDK roadmap
-- Central ecosystem roadmap & migration status: `../workbench-core/docs/roadmap.md` and `../workbench-core/docs/migration-roadmap.md`
+- Central ecosystem roadmap & migration status: `../workbench-core/docs/roadmap.md`, `../workbench-core/docs/adr/0014-module-public-contract-and-console-access.md`, and `../workbench-core/docs/migration-roadmap.md`
