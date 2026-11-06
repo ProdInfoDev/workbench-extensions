@@ -145,6 +145,7 @@ export {
   type AiLevel,
   type ModuleContract,
   type ModuleContractIssue,
+  type ModuleNotificationMetadata,
   type ModuleUiMetadata,
   type SystemRole,
   type Visibility,

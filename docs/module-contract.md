@@ -45,7 +45,17 @@ refinements and may be added in later module versions.
       "x_shop.orders": { "read": ["member"], "write": ["x_shop.editor"], "ai": "confirm" },
       "x_shop.log":    { "read": [] }
     },
-    "events": { "x_shop.order.created": { "visibility": "public", "subscribe": ["member"] } }
+    "events": {
+      "x_shop.order.created": {
+        "visibility": "public",
+        "subscribe": ["member"],
+        "notification": {
+          "title": "Order created",
+          "severity": "info",
+          "payloadSchema": { "type": "object", "properties": { "orderId": { "type": "string" } } }
+        }
+      }
+    }
   },
   "routines": [
     {
@@ -80,6 +90,7 @@ refinements and may be added in later module versions.
 | `effect` | The command boundary's effect: `read`, `configure`, `createArtifact`, `submit`, `controlRun`. |
 | `ai` | How the AI console may do it for the person: `auto`, `confirm`, `never`. Undeclared: `confirm` for public items, `never` for private ones. |
 | `routines[].needs` | Exactly what the routine may do; approved by an owner or admin on activation. |
+| `access.events.*.notification` | User-facing event kind, severity and payload shape. The event's `subscribe` roles govern who may attach automation to it. |
 | `ui.screens` / `ui.navLinks` | Screens and cross-group navigation links contributed to the host's common shell menu groups (`navGroup`), filtered by `requiredCapabilities`. |
 | `ui.slots.{homeCards,settingsCards,reviewCards}` | Cards contributed to the host's Home dashboard, Settings page, and Review queue, filtered by `requiredCapabilities`. |
 

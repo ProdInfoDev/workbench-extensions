@@ -72,7 +72,18 @@ const tableSpec = z.strictObject({
   write: who.optional(),
   ai: ai.optional(),
 });
-const eventSpec = z.strictObject({ visibility, subscribe: who });
+const notificationSpec = z.strictObject({
+  title: text(90),
+  description: text(600).optional(),
+  severity: z.enum(["info", "warning", "critical"]),
+  payloadSchema: z.record(z.string(), z.unknown()).optional(),
+});
+const eventSpec = z.strictObject({
+  visibility,
+  subscribe: who,
+  /** Optional user-facing notification metadata for this typed module event. */
+  notification: notificationSpec.optional(),
+});
 
 const routineSpec = z.strictObject({
   id: dotted,
@@ -152,6 +163,7 @@ export const ModuleContractSchema = z.strictObject({
 
 export type ModuleContract = z.output<typeof ModuleContractSchema>;
 export type ModuleUiMetadata = z.output<typeof ModuleUiMetadataSchema>;
+export type ModuleNotificationMetadata = z.output<typeof notificationSpec>;
 
 export interface ModuleContractIssue {
   /** Dotted path into the declaration. */
