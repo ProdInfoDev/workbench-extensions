@@ -2,9 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
+  RegistryDescriptorSchema,
+  SignedRegistryDescriptorSchema,
   canForkModule,
   checkModuleContract,
+  checkRegistryDescriptor,
   effectiveAiLevel,
+  isPackageOnlyRollback,
   parseModuleContract,
   writableTables,
 } from "../src/index.ts";
@@ -65,6 +69,132 @@ test("only tables that list write are writable outside the module; [] means owne
   const m = valid();
   m.access.tables["x_shop.log"].write = [];
   assert.deepEqual(writableTables(parseModuleContract(m))["x_shop.log"], []);
+});
+
+test("column privacy metadata is validated and unclassified text produces warnings", () => {
+  const contract = checkModuleContract(valid());
+  assert.equal(contract.valid, true);
+  assert.deepEqual(contract.warnings, []);
+
+  const unclassified = checkModuleContract(load("module-contract-unclassified-text.json"));
+  assert.equal(
+    unclassified.valid,
+    true,
+    "classification omissions are warnings, not load failures",
+  );
+  assert.deepEqual(
+    unclassified.warnings.map(({ path, code }) => ({ path, code })),
+    [
+      {
+        path: "access.tables.x_text.contacts.columns.email.classification",
+        code: "unclassified_text_column",
+      },
+    ],
+  );
+
+  assert.ok(
+    codes(
+      problems(
+        (m) =>
+          (m.access.tables["x_shop.orders"].columns.email = {
+            kind: "text",
+            classification: "medical",
+          }),
+      ),
+    ).includes("schema"),
+  );
+  assert.ok(
+    codes(
+      problems(
+        (m) =>
+          (m.access.tables["x_shop.orders"].columns.Email = {
+            kind: "text",
+            classification: "personal",
+          }),
+      ),
+    ).includes("schema"),
+  );
+  assert.ok(
+    codes(
+      problems(
+        (m) =>
+          (m.access.tables["x_shop.orders"].columns.email = {
+            kind: "text",
+            classification: "personal",
+            source: "foreign_table",
+          }),
+      ),
+    ).includes("schema"),
+  );
+});
+
+test("registry descriptors validate listed, unlisted and yanked signed fixtures", () => {
+  for (const name of [
+    "registry-descriptor-listed.json",
+    "registry-descriptor-unlisted.json",
+    "registry-descriptor-yanked.json",
+  ]) {
+    const fixture = load(name);
+    assert.equal(SignedRegistryDescriptorSchema.safeParse(fixture).success, true, name);
+    assert.equal(checkRegistryDescriptor(fixture.descriptor).valid, true, name);
+  }
+
+  const listed = load("registry-descriptor-listed.json");
+  assert.equal(RegistryDescriptorSchema.safeParse(listed.descriptor).success, true);
+  assert.equal(
+    SignedRegistryDescriptorSchema.safeParse({
+      ...listed,
+      signature: { ...listed.signature, value: "bad" },
+    }).success,
+    false,
+  );
+});
+
+test("registry descriptor state, dependency and migration invariants are checked", () => {
+  const descriptor = load("registry-descriptor-listed.json").descriptor;
+  const check = (change: (value: any) => void) => {
+    const value = structuredClone(descriptor);
+    change(value);
+    return checkRegistryDescriptor(value);
+  };
+  assert.equal(check((value) => (value.reason = "unexpected on listed version")).valid, false);
+  assert.equal(
+    check((value) => (value.state = "unlisted")).valid,
+    false,
+    "unlisted needs a reason",
+  );
+  assert.equal(
+    check((value) => {
+      value.state = "yanked";
+      value.reason = "unsafe release";
+    }).valid,
+    false,
+    "yanked needs a replacement",
+  );
+  assert.equal(check((value) => (value.requiredCoreRange = "after lunch")).valid, false);
+  assert.equal(
+    check((value) => value.dependencies.push({ ...value.dependencies[0] })).valid,
+    false,
+  );
+  assert.equal(check((value) => value.migrationSteps.push(value.migrationSteps[0])).valid, false);
+});
+
+test("package-only rollback requires every current migration to exist in the target", () => {
+  assert.equal(
+    isPackageOnlyRollback(
+      { migrationSteps: ["0001_create_orders.sql", "0002_add_notes.sql"] },
+      { migrationSteps: ["0001_create_orders.sql", "0002_add_notes.sql", "0003_add_index.sql"] },
+    ),
+    true,
+  );
+  assert.equal(
+    isPackageOnlyRollback(
+      { migrationSteps: ["0001_create_orders.sql", "0002_add_notes.sql"] },
+      { migrationSteps: ["0001_create_orders.sql"] },
+    ),
+    false,
+  );
+  assert.equal(isPackageOnlyRollback({ migrationSteps: [] }, { migrationSteps: [] }), true);
 });
 
 test("a viewer can never be given a write, a mutating command or a routine run", () => {

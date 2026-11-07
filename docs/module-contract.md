@@ -1,4 +1,4 @@
-# Module contract: public API, roles and access — draft
+# Module contract: public API, roles and access
 
 Status: **executable**. `checkModuleContract` in `@prodinfo/extension-contracts` (`packages/contracts/src/module-contract.ts`)
 enforces the rules below; `schemas/module-contract.schema.json` describes the shape, and
@@ -65,7 +65,14 @@ refinements and may be added in later module versions.
     },
     "views":  { "x_shop_v1.orders": { "visibility": "public", "read": ["viewer", "member"] } },
     "tables": {
-      "x_shop.orders": { "read": ["member"], "write": ["x_shop.editor"], "ai": "confirm" },
+      "x_shop.orders": {
+        "read": ["member"], "write": ["x_shop.editor"], "ai": "confirm",
+        "columns": {
+          "id": { "kind": "other" },
+          "customer_name": { "kind": "text", "classification": "personal" },
+          "delivery_notes": { "kind": "text", "classification": "confidential" }
+        }
+      },
       "x_shop.log":    { "read": [] }
     },
     "events": {
@@ -114,6 +121,7 @@ refinements and may be added in later module versions.
 | `visibility` | `public` items are the module's versioned contract; `private` (default) are internal. |
 | `call` / `read` / `write` / `subscribe` | Which system roles (`member`, `viewer`) and module roles may do it. `owner` always may; `[]` means owner only. |
 | `tables.*.write` | Only tables listed with `write` are writable outside the module's own code. |
+| `tables.*.columns` | Column names and coarse kind (`text` or `other`), with an optional privacy class: `personal`, `confidential` or `secret`. Column classes apply to any kind; text columns without a class produce a warning from `checkModuleContract`, not a load error. Declare actual table columns so hosts can use the metadata for masked sandboxes. |
 | `effect` | The command boundary's effect: `read`, `configure`, `createArtifact`, `submit`, `controlRun`. |
 | `ai` | How the AI console may do it for the person: `auto`, `confirm`, `never`. Undeclared: `confirm` for public items, `never` for private ones. |
 | `routines[].needs` | Exactly what the routine may do; approved by an owner or admin on activation. |
@@ -159,6 +167,7 @@ person who created the key.
 | A `viewer` is never listed for a command that changes state, a table `write`, or a routine `run` | `viewer_write` |
 | `ai: auto` only for `read`, `configure`, `createArtifact`; a private item may only say `ai: never` | `ai_level`, `private_ai` |
 | Library package names are unique, and each package has a semantic version, content digest, license and source availability; base module ids and version ranges are valid and unique | `schema`, `duplicate`, `dependency` |
+| Table column names and `kind` values are valid; a text column without `classification` is returned in `warnings` and does not fail the contract | schema error / `unclassified_text_column` warning |
 | Preset names are valid, permissions are unique and every preset permission is declared by the module | `schema`, `duplicate`, `system_role_preset` |
 | Routine `needs` use `<id>:call`, `<id>:read`, `<table>:write` (own tables only), `connection:<id>:use` or `net:<host>`, without repeats | `need`, `duplicate` |
 | Screens do not take host routes (`/admin`, `/api`, `/extensions`, `/login`, `/review`, `/settings`, `/v1`); screens, links and cards require only the module's own `<module>:` capabilities; UI ids are unique | `route`, `capability`, `duplicate` |
@@ -167,6 +176,47 @@ person who created the key.
 
 `writableTables(contract)` returns the tables that list `write` and who may write; `effectiveAiLevel`
 applies the default `ai` for an item; `canForkModule` is the fork test.
+
+## Registry descriptors and package rollback
+
+The module registry, rather than the module publisher, owns the release descriptor. The generated
+`registry-descriptor.schema.json` and `signed-registry-descriptor.schema.json` describe these
+records. A descriptor contains the module id and version, immutable package digest, `stable` or
+`beta` channel, contract version, required Core version range, dependencies, and the migration steps
+in that package. Its `state` is `listed`, `unlisted` or `yanked`. Unlisted and yanked versions carry
+a reason; a yanked version also names its replacement version. A listed version cannot carry a
+state reason or replacement.
+
+The registry signs canonical JSON for the `descriptor` with Ed25519 and a registry signing key that
+is separate from the licence key:
+
+```json
+{
+  "descriptor": {
+    "moduleId": "x_shop",
+    "version": "1.2.1",
+    "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "channel": "stable",
+    "state": "listed",
+    "contractVersion": "0.1.0-alpha.10",
+    "requiredCoreRange": "^0.1.0",
+    "dependencies": [{ "moduleId": "platform", "versionRange": "^1.0.0" }],
+    "migrationSteps": ["0001_create_orders.sql"]
+  },
+  "signature": { "algorithm": "Ed25519", "keyId": "registry-2026-01", "value": "<base64>" }
+}
+```
+
+`checkRegistryDescriptor` validates structure, state fields, version ranges, dependencies and unique
+migration steps. `isPackageOnlyRollback(current, target)` returns true only when every migration
+step in the current version is already present in the target version; package-only rollback then
+changes code without reversing database migrations.
+
+Keep migrations additive: **expand now, contract in a later release**. Add new tables or nullable
+columns first, deploy code that can work with both shapes, and remove an old column only in a later
+release after no supported package needs it. Bug-fix releases that add no migrations stay
+package-only reversible. A rollback that would remove data-bearing schema requires a previewed
+pre-release restore.
 
 A host that has not adopted the contract yet may treat undeclared visibility as `public` while
 modules migrate (core does, and offers a stricter authoring check); the contract itself defaults to
@@ -184,6 +234,9 @@ exports, not sources.
 1. Decide what `member` and `viewer` may do on each command, view, table and event; add module
    roles only where the system roles are not enough. Keep the public set small and stable.
 2. Declare each command's effect and, where needed, a stricter `ai`.
-3. List writable tables only where outside writes make sense.
-4. Declare routines with the smallest `needs`.
-5. Declare `license` and `source`; write `docs/context.md`.
+3. For each table, describe its columns and classify text or sensitive fields as `personal`,
+   `confidential` or `secret`; resolve all unclassified-text warnings before publishing.
+4. List writable tables only where outside writes make sense.
+5. Declare routines with the smallest `needs`.
+6. Keep migrations additive so package-only rollback remains possible for later fixes.
+7. Declare `license` and `source`; write `docs/context.md`.

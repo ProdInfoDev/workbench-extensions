@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.9";
+export const CONTRACT_VERSION = "0.1.0-alpha.10";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -129,6 +129,7 @@ export {
 export {
   AI_AUTO_EFFECTS,
   AI_LEVELS,
+  COLUMN_CLASSIFICATIONS,
   COMMAND_EFFECTS,
   LibraryReferenceSchema,
   LISTABLE_SYSTEM_ROLES,
@@ -136,20 +137,28 @@ export {
   ModuleUiMetadataSchema,
   ProvenanceSchema,
   RESERVED_ROUTE_PREFIXES,
+  RegistryDescriptorSchema,
   SYSTEM_ROLES,
+  SignedRegistryDescriptorSchema,
   SystemRolePresetsSchema,
   VISIBILITIES,
   canForkModule,
   checkModuleContract,
+  checkRegistryDescriptor,
   effectiveAiLevel,
+  isPackageOnlyRollback,
   parseModuleContract,
   writableTables,
   type AiLevel,
+  type ColumnClassification,
   type LibraryReference,
   type ModuleContract,
   type ModuleContractIssue,
   type ModuleNotificationMetadata,
   type ModuleUiMetadata,
+  type RegistryDescriptor,
+  type RegistryDescriptorIssue,
+  type SignedRegistryDescriptor,
   type SystemRole,
   type SystemRolePresets,
   type Visibility,

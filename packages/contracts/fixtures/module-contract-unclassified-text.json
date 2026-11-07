@@ -1,0 +1,17 @@
+{
+  "id": "x_text",
+  "version": "1.0.0",
+  "license": "MIT",
+  "source": "available",
+  "access": {
+    "tables": {
+      "x_text.contacts": {
+        "read": ["member"],
+        "columns": {
+          "id": { "kind": "other", "classification": "personal" },
+          "email": { "kind": "text" }
+        }
+      }
+    }
+  }
+}

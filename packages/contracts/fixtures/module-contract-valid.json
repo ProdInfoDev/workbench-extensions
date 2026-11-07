@@ -75,8 +75,20 @@
       "x_shop_v1.orders": { "visibility": "public", "read": ["viewer", "member"] }
     },
     "tables": {
-      "x_shop.orders": { "read": ["member"], "write": ["x_shop.editor"], "ai": "confirm" },
-      "x_shop.log": { "read": [] }
+      "x_shop.orders": {
+        "read": ["member"],
+        "write": ["x_shop.editor"],
+        "ai": "confirm",
+        "columns": {
+          "id": { "kind": "other" },
+          "customer_name": { "kind": "text", "classification": "personal" },
+          "delivery_notes": { "kind": "text", "classification": "confidential" }
+        }
+      },
+      "x_shop.log": {
+        "read": [],
+        "columns": { "payload": { "kind": "text", "classification": "secret" } }
+      }
     },
     "events": {
       "x_shop.order.created": {

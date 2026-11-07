@@ -56,6 +56,17 @@ const packageName = z
   .regex(/^(?:@[a-z0-9][a-z0-9._-]{0,38}\/)?[a-z0-9][a-z0-9._-]{0,99}$/);
 /** Command, table, view, event and routine ids: dotted lowercase words. */
 const dotted = z.string().regex(/^[a-z][a-z0-9_]*(?:\.[a-z0-9_-]+)+$/);
+const columnName = z.string().regex(/^[a-z][a-z0-9_]{0,62}$/);
+const digest = z.string().regex(/^sha256:[0-9a-f]{64}$/);
+const semanticVersion = z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
+
+/** Coarse data category used for privacy review; classification is independent of storage type. */
+export const COLUMN_CLASSIFICATIONS = ["personal", "confidential", "secret"] as const;
+export type ColumnClassification = (typeof COLUMN_CLASSIFICATIONS)[number];
+const columnSpec = z.strictObject({
+  kind: z.enum(["text", "other"]),
+  classification: z.enum(COLUMN_CLASSIFICATIONS).optional(),
+});
 
 const visibility = z.enum(VISIBILITIES).default("private");
 const effect = z.enum(COMMAND_EFFECTS);
@@ -67,7 +78,7 @@ const who = z.array(z.string().min(1).max(80)).max(20);
 export const LibraryReferenceSchema = z.strictObject({
   name: packageName,
   version,
-  digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+  digest,
   license: text(64),
   source: z.enum(["available", "closed"]),
 });
@@ -98,6 +109,8 @@ const tableSpec = z.strictObject({
   /** Present = writable outside the module's own code; `[]` = owner only. Absent = not writable. */
   write: who.optional(),
   ai: ai.optional(),
+  /** Declared columns for privacy review and later sandbox masking. */
+  columns: z.record(columnName, columnSpec).optional(),
 });
 const notificationSpec = z.strictObject({
   title: text(90),
@@ -179,12 +192,44 @@ export const ProvenanceSchema = z.strictObject({
   origin: z.strictObject({
     moduleId,
     version,
-    digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
+    digest,
     license: text(64),
     source: z.literal("available"),
   }),
   forkedAt: z.iso.datetime().optional(),
 });
+
+const versionRange = z.string().trim().min(1).max(120);
+const registryDependency = z.strictObject({ moduleId, versionRange });
+const registryState = z.enum(["listed", "unlisted", "yanked"]);
+const migrationStep = z.string().regex(/^\d{4}_[a-z][a-z0-9_-]*\.sql$/);
+
+/** Signed registry metadata for one immutable module package version. */
+export const RegistryDescriptorSchema = z.strictObject({
+  moduleId,
+  version,
+  packageDigest: digest,
+  channel: z.enum(["stable", "beta"]),
+  state: registryState,
+  reason: text(600).optional(),
+  replacementVersion: semanticVersion.optional(),
+  contractVersion: semanticVersion,
+  requiredCoreRange: versionRange,
+  dependencies: z.array(registryDependency).max(100),
+  migrationSteps: z.array(migrationStep).max(500),
+});
+export type RegistryDescriptor = z.infer<typeof RegistryDescriptorSchema>;
+
+/** The registry signs canonical JSON for `descriptor`; this key is separate from licence keys. */
+export const SignedRegistryDescriptorSchema = z.strictObject({
+  descriptor: RegistryDescriptorSchema,
+  signature: z.strictObject({
+    algorithm: z.literal("Ed25519"),
+    keyId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+    value: z.string().regex(/^[A-Za-z0-9+/]{86}==$/),
+  }),
+});
+export type SignedRegistryDescriptor = z.infer<typeof SignedRegistryDescriptorSchema>;
 
 export const ModuleContractSchema = z.strictObject({
   id: moduleId,
@@ -234,8 +279,86 @@ export interface ModuleContractIssue {
     | "provenance"
     | "docs_path"
     | "dependency"
-    | "system_role_preset";
+    | "system_role_preset"
+    | "unclassified_text_column";
   readonly message: string;
+}
+
+export interface RegistryDescriptorIssue {
+  readonly path: string;
+  readonly message: string;
+}
+
+function isValidVersionRange(range: string): boolean {
+  if (range === "*" || range === "latest") return true;
+  const parts = range.split(/\s+/).filter(Boolean);
+  return (
+    parts.length > 0 &&
+    parts.every((part) => /^(?:\^|~|>=|<=|>|<|=)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(part))
+  );
+}
+
+/** Checks the registry-owned release descriptor, including state and rollback invariants. */
+export function checkRegistryDescriptor(raw: unknown): {
+  valid: boolean;
+  issues: readonly RegistryDescriptorIssue[];
+  descriptor?: RegistryDescriptor;
+} {
+  assertBoundedJson(raw);
+  const parsed = RegistryDescriptorSchema.safeParse(raw);
+  if (!parsed.success)
+    return {
+      valid: false,
+      issues: parsed.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    };
+
+  const descriptor = parsed.data;
+  const issues: RegistryDescriptorIssue[] = [];
+  const add = (path: string, message: string) => issues.push({ path, message });
+  if (!isValidVersionRange(descriptor.requiredCoreRange))
+    add("requiredCoreRange", "Invalid semantic version range");
+  const seenDependencies = new Set<string>();
+  descriptor.dependencies.forEach((dependency, index) => {
+    if (dependency.moduleId === descriptor.moduleId)
+      add(`dependencies.${index}.moduleId`, "A module cannot depend on itself");
+    if (seenDependencies.has(dependency.moduleId))
+      add(`dependencies.${index}.moduleId`, "A module dependency is listed twice");
+    seenDependencies.add(dependency.moduleId);
+    if (!isValidVersionRange(dependency.versionRange))
+      add(`dependencies.${index}.versionRange`, "Invalid semantic version range");
+  });
+  const seenMigrations = new Set<string>();
+  descriptor.migrationSteps.forEach((step, index) => {
+    if (seenMigrations.has(step))
+      add(`migrationSteps.${index}`, "A migration step is listed twice");
+    seenMigrations.add(step);
+  });
+  if (descriptor.state === "listed") {
+    if (descriptor.reason !== undefined) add("reason", "A listed version has no state reason");
+    if (descriptor.replacementVersion !== undefined)
+      add("replacementVersion", "A listed version has no replacement version");
+  } else {
+    if (!descriptor.reason) add("reason", `${descriptor.state} versions require a reason`);
+    if (descriptor.state === "unlisted" && descriptor.replacementVersion !== undefined)
+      add("replacementVersion", "Only a yanked version may name a replacement");
+    if (descriptor.state === "yanked" && descriptor.replacementVersion === undefined)
+      add("replacementVersion", "A yanked version must name its replacement version");
+    if (descriptor.replacementVersion === descriptor.version)
+      add("replacementVersion", "A version cannot replace itself");
+  }
+  return issues.length ? { valid: false, issues } : { valid: true, issues: [], descriptor };
+}
+
+/** True when reverting the package cannot remove any migration step already present now. */
+export function isPackageOnlyRollback(
+  current: Pick<RegistryDescriptor, "migrationSteps">,
+  target: Pick<RegistryDescriptor, "migrationSteps">,
+): boolean {
+  const targetSteps = new Set(target.migrationSteps);
+  return current.migrationSteps.every((step) => targetSteps.has(step));
 }
 
 const NO_FORK = new Set(["unlicensed", "proprietary", "none", "all-rights-reserved"]);
@@ -280,6 +403,7 @@ const NEED = {
 export function checkModuleContract(raw: unknown): {
   valid: boolean;
   issues: readonly ModuleContractIssue[];
+  warnings: readonly ModuleContractIssue[];
   contract?: ModuleContract;
 } {
   assertBoundedJson(raw);
@@ -292,9 +416,11 @@ export function checkModuleContract(raw: unknown): {
         code: "schema" as const,
         message: i.message,
       })),
+      warnings: [],
     };
   const c = parsed.data;
   const issues: ModuleContractIssue[] = [];
+  const warnings: ModuleContractIssue[] = [];
   const add = (path: string, code: ModuleContractIssue["code"], message: string) =>
     issues.push({ path, code, message });
 
@@ -397,6 +523,13 @@ export function checkModuleContract(raw: unknown): {
       roleList(`${path}.write`, spec.write);
       noViewer(`${path}.write`, spec.write, "write a table");
     }
+    for (const [column, definition] of Object.entries(spec.columns ?? {}))
+      if (definition.kind === "text" && definition.classification === undefined)
+        warnings.push({
+          path: `${path}.columns.${column}.classification`,
+          code: "unclassified_text_column",
+          message: `Text column ${column} has no privacy classification`,
+        });
   }
   for (const [name, spec] of Object.entries(c.access.events)) {
     const path = `access.events.${name}`;
@@ -524,7 +657,9 @@ export function checkModuleContract(raw: unknown): {
       add("provenance.origin.license", "provenance", `${origin.license} does not allow forking`);
   }
 
-  return issues.length ? { valid: false, issues } : { valid: true, issues: [], contract: c };
+  return issues.length
+    ? { valid: false, issues, warnings }
+    : { valid: true, issues: [], warnings, contract: c };
 }
 
 /** Throws on the first listed problem; for tools that want an exception. */

@@ -398,6 +398,37 @@
                   "confirm",
                   "never"
                 ]
+              },
+              "columns": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{0,62}$"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "text",
+                        "other"
+                      ]
+                    },
+                    "classification": {
+                      "type": "string",
+                      "enum": [
+                        "personal",
+                        "confidential",
+                        "secret"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
