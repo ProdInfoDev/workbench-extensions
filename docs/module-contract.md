@@ -118,7 +118,8 @@ refinements and may be added in later module versions.
 | `ai` | How the AI console may do it for the person: `auto`, `confirm`, `never`. Undeclared: `confirm` for public items, `never` for private ones. |
 | `routines[].needs` | Exactly what the routine may do; approved by an owner or admin on activation. |
 | `access.events.*.notification` | User-facing event kind, severity and payload shape. The event's `subscribe` roles govern who may attach automation to it. |
-| `ui.screens` / `ui.navLinks` | Screens and cross-group navigation links contributed to the host's common shell menu groups (`navGroup`), filtered by `requiredCapabilities`. |
+| `ui.displayName` | Optional human-readable module name used by the host when it labels module-owned items. |
+| `ui.screens` / `ui.navLinks` | Screens and cross-group navigation links contributed to the host's common shell menu groups (`navGroup`), filtered by `requiredCapabilities`. Screen routes may contain whole-segment `:name` parameters; parameterized screens are routable but hidden from navigation and command search. `hidden: true` hides a fixed screen from those lists too. |
 | `ui.slots.{homeCards,settingsCards,reviewCards}` | Cards contributed to the host's Home dashboard, Settings page, and Review queue, filtered by `requiredCapabilities`. |
 
 Anything not declared is readable by `owner` only and writable by nobody but the module's own code.

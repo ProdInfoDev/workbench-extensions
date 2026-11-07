@@ -1,11 +1,11 @@
 # Workbench Extensions — Context (`ProdInfoDev/workbench-extensions`)
 
-Last updated: 2026-11-06.
+Last updated: 2026-11-07.
 
 ## Current State
 
 - **Repository**: `ProdInfoDev/workbench-extensions` (**Public / MIT**), replacing the archived `prodinfo-extensions` repository.
-- **Contract Package Source (not registry-published)**: `@prodinfo/extension-contracts` (`0.1.0-alpha.8`) adds pinned code-only libraries, required base-module dependencies and named member/viewer permission presets. Core adopts the locally packed artifact by re-pinning `vendor/contract-pin.json`; npm publication is pending registry credentials.
+- **Contract Package Source (not registry-published)**: `@prodinfo/extension-contracts` (`0.1.0-alpha.9`) adds pinned code-only libraries, required base-module dependencies, named member/viewer permission presets, and hidden parameterized UI screens. Core adopts the locally packed artifact by re-pinning `vendor/contract-pin.json`; npm publication remains skipped.
 - **Module Plugin Contract Specification ([`docs/module-contract.md`](module-contract.md))**:
   - Defines the public module contract matching `workbench-core` [ADR 0014](../../workbench-core/docs/adr/0014-module-public-contract-and-console-access.md) and ADR 0015:
     - 4 host system roles (`owner`, `admin`, `member`, `viewer`) + optional module roles (`access.roles`).

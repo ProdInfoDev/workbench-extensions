@@ -27,6 +27,14 @@ test("the reference declaration is valid and keeps its public/private split", ()
   const contract = parseModuleContract(valid());
   assert.equal(contract.access.commands["x_shop.order.purge"]?.visibility, "private");
   assert.equal(contract.ui?.slots.homeCards[0]?.id, "x_shop.home.orders");
+  assert.equal(contract.ui?.displayName, "Shop");
+  assert.deepEqual(contract.ui?.screens[1], {
+    id: "x_shop.order-detail",
+    route: "/shop/orders/:id",
+    title: "Order detail",
+    hidden: true,
+    requiredCapabilities: ["x_shop:read"],
+  });
   assert.deepEqual(contract.depends, ["platform@^1.0.0"]);
   assert.equal(contract.libraries[0]?.name, "@prodinfo/ui");
   assert.deepEqual(Object.keys(contract.systemRolePresets?.member ?? {}), [
@@ -165,6 +173,22 @@ test("UI metadata: ids, routes and capabilities stay inside the module and off h
   const ui = (change: (m: any) => void) => codes(problems(change));
   assert.ok(ui((m) => (m.ui.screens[0].route = "/admin/users")).includes("route"));
   assert.ok(ui((m) => (m.ui.screens[0].route = "/v1/x")).includes("route"));
+  assert.deepEqual(
+    ui((m) => (m.ui.screens[0].route = "/shop/products/:id")),
+    [],
+  );
+  assert.ok(ui((m) => (m.ui.screens[0].route = "/shop/orders/:id/:id")).includes("route"));
+  assert.ok(ui((m) => (m.ui.screens[0].route = "/shop/orders/:")).includes("route"));
+  assert.ok(
+    ui((m) =>
+      m.ui.screens.push({
+        id: "x_shop.order-copy",
+        route: "/shop/orders/:orderId",
+        title: "Another order detail",
+        requiredCapabilities: ["x_shop:read"],
+      }),
+    ).includes("duplicate"),
+  );
   assert.ok(ui((m) => (m.ui.screens[0].requiredCapabilities = ["ar:read"])).includes("capability"));
   assert.ok(ui((m) => (m.ui.slots.homeCards[0].id = "other.card")).includes("prefix"));
   assert.ok(ui((m) => (m.ui.navLinks[0].id = "x_shop.orders")).includes("duplicate"));

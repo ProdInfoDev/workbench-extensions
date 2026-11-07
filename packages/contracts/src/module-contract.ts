@@ -141,10 +141,15 @@ const cardSpec = z.strictObject({
 });
 const screenSpec = z.strictObject({
   id: dotted,
-  route: z.string().regex(/^\/[a-z0-9/_-]*$/),
+  route: z
+    .string()
+    .min(1)
+    .max(240)
+    .regex(/^\/[a-zA-Z0-9:_/-]*$/),
   title: text(90),
   description: text(600).optional(),
   navGroup: text(60).optional(),
+  hidden: z.boolean().optional(),
   requiredCapabilities: z.array(capability).max(10).default([]),
 });
 const navLinkSpec = z.strictObject({
@@ -157,6 +162,7 @@ const navLinkSpec = z.strictObject({
 
 /** Declarative UI contribution to the host shell. Components live in the module's UI bundle. */
 export const ModuleUiMetadataSchema = z.strictObject({
+  displayName: text(90).optional(),
   screens: z.array(screenSpec).max(50).default([]),
   navLinks: z.array(navLinkSpec).max(50).default([]),
   slots: z
@@ -454,17 +460,41 @@ export function checkModuleContract(raw: unknown): {
           );
     };
     const route = (path: string, value: string) => {
+      const segments = value === "/" ? [] : value.slice(1).split("/");
+      const parameterNames = new Set<string>();
+      const validLocalPattern =
+        value.startsWith("/") &&
+        !value.startsWith("//") &&
+        !/[?#\\%\s\u0000-\u001f]/.test(value) &&
+        (value === "/" ||
+          segments.every((segment) => {
+            if (!segment || segment === "." || segment === "..") return false;
+            if (!segment.startsWith(":")) return !segment.includes(":");
+            const name = segment.slice(1);
+            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) || parameterNames.has(name)) return false;
+            parameterNames.add(name);
+            return true;
+          }));
+      if (!validLocalPattern) {
+        add(path, "route", `${value} is not a valid local screen path pattern`);
+        return;
+      }
       if (
         value !== "/" &&
         RESERVED_ROUTE_PREFIXES.some((p) => value === p || value.startsWith(`${p}/`))
       )
         add(path, "route", `${value} is a host route; a module cannot take it`);
     };
+    const screenRoutes = new Set<string>();
     c.ui.screens.forEach((screen, i) => {
       const path = `ui.screens.${i}`;
       if (!owns(screen.id)) add(`${path}.id`, "prefix", `Screen ids must start with ${c.id}.`);
       unique(`${path}.id`, screen.id);
       route(`${path}.route`, screen.route);
+      const signature = screen.route.replace(/:[A-Za-z_][A-Za-z0-9_]*/g, ":");
+      if (screenRoutes.has(signature))
+        add(`${path}.route`, "duplicate", `Screen route pattern ${screen.route} is duplicated.`);
+      screenRoutes.add(signature);
       caps(`${path}.requiredCapabilities`, screen.requiredCapabilities);
     });
     c.ui.navLinks.forEach((link, i) => {

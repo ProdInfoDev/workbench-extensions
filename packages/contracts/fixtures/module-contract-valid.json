@@ -110,12 +110,20 @@
     }
   ],
   "ui": {
+    "displayName": "Shop",
     "screens": [
       {
         "id": "x_shop.orders",
         "route": "/shop/orders",
         "title": "Orders",
         "navGroup": "Sales",
+        "requiredCapabilities": ["x_shop:read"]
+      },
+      {
+        "id": "x_shop.order-detail",
+        "route": "/shop/orders/:id",
+        "title": "Order detail",
+        "hidden": true,
         "requiredCapabilities": ["x_shop:read"]
       }
     ],

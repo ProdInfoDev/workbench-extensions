@@ -533,6 +533,11 @@
     "ui": {
       "type": "object",
       "properties": {
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 90
+        },
         "screens": {
           "default": [],
           "maxItems": 50,
@@ -546,7 +551,9 @@
               },
               "route": {
                 "type": "string",
-                "pattern": "^\\/[a-z0-9/_-]*$"
+                "minLength": 1,
+                "maxLength": 240,
+                "pattern": "^\\/[a-zA-Z0-9:_/-]*$"
               },
               "title": {
                 "type": "string",
@@ -562,6 +569,9 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 60
+              },
+              "hidden": {
+                "type": "boolean"
               },
               "requiredCapabilities": {
                 "default": [],
