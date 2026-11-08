@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.10";
+export const CONTRACT_VERSION = "0.1.0-alpha.11";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -144,6 +144,7 @@ export {
   VISIBILITIES,
   canForkModule,
   checkModuleContract,
+  checkDependencyLayers,
   checkRegistryDescriptor,
   effectiveAiLevel,
   isPackageOnlyRollback,
@@ -154,10 +155,13 @@ export {
   type LibraryReference,
   type ModuleContract,
   type ModuleContractIssue,
+  type DependencyLayerResult,
+  type ModuleLayer,
   type ModuleNotificationMetadata,
   type ModuleUiMetadata,
   type RegistryDescriptor,
   type RegistryDescriptorIssue,
+  type RegistryPackageKind,
   type SignedRegistryDescriptor,
   type SystemRole,
   type SystemRolePresets,

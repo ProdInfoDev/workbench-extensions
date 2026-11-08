@@ -3,97 +3,360 @@
   "type": "object",
   "properties": {
     "descriptor": {
-      "type": "object",
-      "properties": {
-        "moduleId": {
-          "type": "string",
-          "pattern": "^[a-z][a-z0-9_]{0,39}$"
-        },
-        "version": {
-          "type": "string",
-          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
-        },
-        "packageDigest": {
-          "type": "string",
-          "pattern": "^sha256:[0-9a-f]{64}$"
-        },
-        "channel": {
-          "type": "string",
-          "enum": [
-            "stable",
-            "beta"
-          ]
-        },
-        "state": {
-          "type": "string",
-          "enum": [
-            "listed",
-            "unlisted",
-            "yanked"
-          ]
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 600
-        },
-        "replacementVersion": {
-          "type": "string",
-          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
-        },
-        "contractVersion": {
-          "type": "string",
-          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
-        },
-        "requiredCoreRange": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120
-        },
-        "dependencies": {
-          "maxItems": 100,
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "moduleId": {
-                "type": "string",
-                "pattern": "^[a-z][a-z0-9_]{0,39}$"
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "moduleId": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,39}$"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "packageDigest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "stable",
+                "beta"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "listed",
+                "unlisted",
+                "yanked"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            },
+            "replacementVersion": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "contractVersion": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "requiredCoreRange": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "kind": {
+              "type": "string",
+              "const": "module"
+            },
+            "layer": {
+              "type": "string",
+              "enum": [
+                "service",
+                "business",
+                "bridge"
+              ]
+            },
+            "extends": {
+              "type": "object",
+              "properties": {
+                "moduleId": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                },
+                "versionRange": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                }
               },
-              "versionRange": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 120
+              "required": [
+                "moduleId",
+                "versionRange"
+              ],
+              "additionalProperties": false
+            },
+            "dependencies": {
+              "maxItems": 100,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "moduleId": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                  },
+                  "versionRange": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "moduleId",
+                  "versionRange"
+                ],
+                "additionalProperties": false
               }
             },
-            "required": [
-              "moduleId",
-              "versionRange"
-            ],
-            "additionalProperties": false
-          }
+            "migrationSteps": {
+              "maxItems": 500,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\d{4}_[a-z][a-z0-9_-]*\\.sql$"
+              }
+            }
+          },
+          "required": [
+            "moduleId",
+            "version",
+            "packageDigest",
+            "channel",
+            "state",
+            "contractVersion",
+            "requiredCoreRange",
+            "kind",
+            "layer",
+            "dependencies",
+            "migrationSteps"
+          ],
+          "additionalProperties": false
         },
-        "migrationSteps": {
-          "maxItems": 500,
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^\\d{4}_[a-z][a-z0-9_-]*\\.sql$"
-          }
+        {
+          "type": "object",
+          "properties": {
+            "moduleId": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,39}$"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "packageDigest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "stable",
+                "beta"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "listed",
+                "unlisted",
+                "yanked"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            },
+            "replacementVersion": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "contractVersion": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "requiredCoreRange": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "kind": {
+              "type": "string",
+              "const": "pack"
+            },
+            "dependencies": {
+              "maxItems": 0,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "moduleId": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                  },
+                  "versionRange": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "moduleId",
+                  "versionRange"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "migrationSteps": {
+              "maxItems": 0,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\d{4}_[a-z][a-z0-9_-]*\\.sql$"
+              }
+            },
+            "targetModule": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,39}$"
+            },
+            "targetVersionRange": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "basePack": {
+              "type": "object",
+              "properties": {
+                "packageId": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                },
+                "versionRange": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                }
+              },
+              "required": [
+                "packageId",
+                "versionRange"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "moduleId",
+            "version",
+            "packageDigest",
+            "channel",
+            "state",
+            "contractVersion",
+            "requiredCoreRange",
+            "kind",
+            "dependencies",
+            "migrationSteps",
+            "targetModule",
+            "targetVersionRange"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "moduleId": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,39}$"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "packageDigest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "stable",
+                "beta"
+              ]
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "listed",
+                "unlisted",
+                "yanked"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            },
+            "replacementVersion": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "contractVersion": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+            },
+            "requiredCoreRange": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "kind": {
+              "type": "string",
+              "const": "library"
+            },
+            "dependencies": {
+              "maxItems": 0,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "moduleId": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                  },
+                  "versionRange": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "moduleId",
+                  "versionRange"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "migrationSteps": {
+              "maxItems": 0,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\d{4}_[a-z][a-z0-9_-]*\\.sql$"
+              }
+            }
+          },
+          "required": [
+            "moduleId",
+            "version",
+            "packageDigest",
+            "channel",
+            "state",
+            "contractVersion",
+            "requiredCoreRange",
+            "kind",
+            "dependencies",
+            "migrationSteps"
+          ],
+          "additionalProperties": false
         }
-      },
-      "required": [
-        "moduleId",
-        "version",
-        "packageDigest",
-        "channel",
-        "state",
-        "contractVersion",
-        "requiredCoreRange",
-        "dependencies",
-        "migrationSteps"
-      ],
-      "additionalProperties": false
+      ]
     },
     "signature": {
       "type": "object",

@@ -201,11 +201,12 @@ export const ProvenanceSchema = z.strictObject({
 
 const versionRange = z.string().trim().min(1).max(120);
 const registryDependency = z.strictObject({ moduleId, versionRange });
+const registryPackageReference = z.strictObject({ packageId: moduleId, versionRange });
 const registryState = z.enum(["listed", "unlisted", "yanked"]);
+const moduleLayer = z.enum(["service", "business", "bridge"]);
 const migrationStep = z.string().regex(/^\d{4}_[a-z][a-z0-9_-]*\.sql$/);
 
-/** Signed registry metadata for one immutable module package version. */
-export const RegistryDescriptorSchema = z.strictObject({
+const registryDescriptorFields = {
   moduleId,
   version,
   packageDigest: digest,
@@ -215,10 +216,40 @@ export const RegistryDescriptorSchema = z.strictObject({
   replacementVersion: semanticVersion.optional(),
   contractVersion: semanticVersion,
   requiredCoreRange: versionRange,
-  dependencies: z.array(registryDependency).max(100),
-  migrationSteps: z.array(migrationStep).max(500),
-});
+};
+
+/** Signed registry metadata for one immutable module, pack or library package version. */
+export const RegistryDescriptorSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    ...registryDescriptorFields,
+    kind: z.literal("module"),
+    /** Core itself is implicit and is not an install-time dependency. */
+    layer: moduleLayer,
+    /** A business module may extend one base module, independently of service dependencies. */
+    extends: registryDependency.optional(),
+    dependencies: z.array(registryDependency).max(100),
+    migrationSteps: z.array(migrationStep).max(500),
+  }),
+  z.strictObject({
+    ...registryDescriptorFields,
+    kind: z.literal("pack"),
+    dependencies: z.array(registryDependency).max(0),
+    migrationSteps: z.array(migrationStep).max(0),
+    /** Pack-only target metadata. A base pack must target the same module. */
+    targetModule: moduleId,
+    targetVersionRange: versionRange,
+    basePack: registryPackageReference.optional(),
+  }),
+  z.strictObject({
+    ...registryDescriptorFields,
+    kind: z.literal("library"),
+    dependencies: z.array(registryDependency).max(0),
+    migrationSteps: z.array(migrationStep).max(0),
+  }),
+]);
 export type RegistryDescriptor = z.infer<typeof RegistryDescriptorSchema>;
+export type RegistryPackageKind = RegistryDescriptor["kind"];
+export type ModuleLayer = z.infer<typeof moduleLayer>;
 
 /** The registry signs canonical JSON for `descriptor`; this key is separate from licence keys. */
 export const SignedRegistryDescriptorSchema = z.strictObject({
@@ -237,8 +268,12 @@ export const ModuleContractSchema = z.strictObject({
   license: text(64),
   source: z.enum(["available", "closed"]),
   provenance: ProvenanceSchema.optional(),
+  /** Service, business or integration bridge. Ordinary modules are business modules. */
+  layer: moduleLayer.default("business"),
   /** Required base modules, optionally with a semantic version range (`module@^1.0.0`). */
   depends: z.array(z.string().trim().min(1).max(120)).max(100).default([]),
+  /** One base business module and an explicit compatible version range, e.g. `core@^1.0.0`. */
+  extends: z.string().trim().min(1).max(120).optional(),
   /** Code-only package dependencies, pinned by version and content digest. */
   libraries: z.array(LibraryReferenceSchema).max(50).default([]),
   /** Named permission presets; the first entry for each role is its module default. */
@@ -279,6 +314,7 @@ export interface ModuleContractIssue {
     | "provenance"
     | "docs_path"
     | "dependency"
+    | "layer"
     | "system_role_preset"
     | "unclassified_text_column";
   readonly message: string;
@@ -289,6 +325,11 @@ export interface RegistryDescriptorIssue {
   readonly message: string;
 }
 
+export interface DependencyLayerResult {
+  readonly valid: boolean;
+  readonly issues: readonly RegistryDescriptorIssue[];
+}
+
 function isValidVersionRange(range: string): boolean {
   if (range === "*" || range === "latest") return true;
   const parts = range.split(/\s+/).filter(Boolean);
@@ -296,6 +337,24 @@ function isValidVersionRange(range: string): boolean {
     parts.length > 0 &&
     parts.every((part) => /^(?:\^|~|>=|<=|>|<|=)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(part))
   );
+}
+
+function parseModuleReference(raw: string): {
+  moduleId: string;
+  versionRange: string;
+  hasRange: boolean;
+  valid: boolean;
+} {
+  const at = raw.indexOf("@");
+  const hasRange = at > 0;
+  const id = hasRange ? raw.slice(0, at) : raw;
+  const versionRange = hasRange ? raw.slice(at + 1) : "*";
+  return {
+    moduleId: id,
+    versionRange,
+    hasRange,
+    valid: moduleId.safeParse(id).success && isValidVersionRange(versionRange),
+  };
 }
 
 /** Checks the registry-owned release descriptor, including state and rollback invariants. */
@@ -320,6 +379,29 @@ export function checkRegistryDescriptor(raw: unknown): {
   const add = (path: string, message: string) => issues.push({ path, message });
   if (!isValidVersionRange(descriptor.requiredCoreRange))
     add("requiredCoreRange", "Invalid semantic version range");
+  if (descriptor.kind === "module") {
+    if (descriptor.extends !== undefined) {
+      if (descriptor.layer !== "business")
+        add("extends", "Only a business module may extend a base module");
+      if (descriptor.extends.moduleId === descriptor.moduleId)
+        add("extends.moduleId", "A module cannot extend itself");
+      if (!isValidVersionRange(descriptor.extends.versionRange))
+        add("extends.versionRange", "Invalid semantic version range");
+      if (
+        descriptor.dependencies.some(
+          (dependency) => dependency.moduleId === descriptor.extends?.moduleId,
+        )
+      )
+        add("extends.moduleId", "The base module must not also appear in dependencies");
+    }
+  } else if (descriptor.kind === "pack") {
+    if (!isValidVersionRange(descriptor.targetVersionRange))
+      add("targetVersionRange", "Invalid semantic version range");
+    if (descriptor.basePack?.packageId === descriptor.moduleId)
+      add("basePack.packageId", "A pack cannot extend itself");
+    if (descriptor.basePack && !isValidVersionRange(descriptor.basePack.versionRange))
+      add("basePack.versionRange", "Invalid semantic version range");
+  }
   const seenDependencies = new Set<string>();
   descriptor.dependencies.forEach((dependency, index) => {
     if (dependency.moduleId === descriptor.moduleId)
@@ -350,6 +432,155 @@ export function checkRegistryDescriptor(raw: unknown): {
       add("replacementVersion", "A version cannot replace itself");
   }
   return issues.length ? { valid: false, issues } : { valid: true, issues: [], descriptor };
+}
+
+/**
+ * Checks layer, target and cycle rules over one descriptor and the complete selected dependency
+ * descriptor set. Supply at most one selected version for each module or pack id.
+ */
+export function checkDependencyLayers(
+  descriptor: RegistryDescriptor,
+  dependencyDescriptors: readonly RegistryDescriptor[],
+): DependencyLayerResult {
+  const issues: RegistryDescriptorIssue[] = [];
+  const add = (path: string, message: string) => issues.push({ path, message });
+  const descriptors = [descriptor, ...dependencyDescriptors];
+  type ModuleDescriptor = Extract<RegistryDescriptor, { kind: "module" }>;
+  type PackDescriptor = Extract<RegistryDescriptor, { kind: "pack" }>;
+  const modules = new Map<string, ModuleDescriptor>();
+  const packs = new Map<string, PackDescriptor>();
+
+  for (const [index, candidate] of descriptors.entries()) {
+    const checked = checkRegistryDescriptor(candidate);
+    if (!checked.valid) {
+      for (const issue of checked.issues)
+        add(
+          index === 0 ? issue.path : `dependencyDescriptors.${index - 1}.${issue.path}`,
+          issue.message,
+        );
+    }
+    if (candidate.kind === "module") {
+      if (modules.has(candidate.moduleId))
+        add(
+          index === 0 ? "moduleId" : `dependencyDescriptors.${index - 1}.moduleId`,
+          `More than one selected version of module ${candidate.moduleId} was supplied`,
+        );
+      else modules.set(candidate.moduleId, candidate);
+    } else if (candidate.kind === "pack") {
+      if (packs.has(candidate.moduleId))
+        add(
+          index === 0 ? "moduleId" : `dependencyDescriptors.${index - 1}.moduleId`,
+          `More than one selected version of pack ${candidate.moduleId} was supplied`,
+        );
+      else packs.set(candidate.moduleId, candidate);
+    }
+  }
+
+  const moduleEdges = new Map<string, string[]>();
+  const layerRank: Record<ModuleLayer, number> = { service: 2, business: 3, bridge: 4 };
+  for (const module of modules.values()) {
+    const modulePath =
+      module.moduleId === descriptor.moduleId
+        ? ""
+        : `dependencyDescriptors.${dependencyDescriptors.findIndex((item) => item.moduleId === module.moduleId)}.`;
+    const layer = module.layer;
+    if (layer === undefined) continue;
+    const edges: string[] = [];
+    if (layer === "service" && (module.dependencies.length > 0 || module.extends !== undefined))
+      add(`${modulePath}layer`, "A service may not depend on or extend another package");
+    if (layer === "bridge" && module.extends !== undefined)
+      add(`${modulePath}extends`, "A bridge may not extend a base module");
+
+    for (const [index, dependency] of module.dependencies.entries()) {
+      const target = modules.get(dependency.moduleId);
+      if (!target) {
+        add(
+          `${modulePath}dependencies.${index}`,
+          `Module dependency ${dependency.moduleId} is missing from the selected descriptor set`,
+        );
+        continue;
+      }
+      edges.push(target.moduleId);
+      if (layer === "business" && target.layer !== "service")
+        add(`${modulePath}dependencies.${index}`, "A business module may depend only on services");
+      if (layer === "bridge" && target.layer !== "service" && target.layer !== "business")
+        add(
+          `${modulePath}dependencies.${index}`,
+          "A bridge may depend only on services or business modules",
+        );
+      if (layer === "service")
+        add(`${modulePath}dependencies.${index}`, "A service may not depend on another package");
+    }
+
+    if (module.extends) {
+      const target = modules.get(module.extends.moduleId);
+      if (!target) {
+        add(
+          `${modulePath}extends`,
+          `Base module ${module.extends.moduleId} is missing from the selected descriptor set`,
+        );
+      } else {
+        edges.push(target.moduleId);
+        if (layer !== "business" || target.layer !== "business")
+          add(`${modulePath}extends`, "A business module may extend only one business module");
+      }
+    }
+    moduleEdges.set(module.moduleId, edges);
+  }
+
+  const packEdges = new Map<string, string[]>();
+  for (const pack of packs.values()) {
+    const packPath =
+      pack.moduleId === descriptor.moduleId
+        ? ""
+        : `dependencyDescriptors.${dependencyDescriptors.findIndex((item) => item.moduleId === pack.moduleId)}.`;
+    if (pack.targetModule) {
+      const target = modules.get(pack.targetModule);
+      if (!target)
+        add(
+          `${packPath}targetModule`,
+          `Target module ${pack.targetModule} is missing from the selected descriptor set`,
+        );
+    }
+    if (pack.basePack) {
+      const base = packs.get(pack.basePack.packageId);
+      if (!base) {
+        add(
+          `${packPath}basePack`,
+          `Base pack ${pack.basePack.packageId} is missing from the selected descriptor set`,
+        );
+      } else {
+        if (base.targetModule !== pack.targetModule)
+          add(`${packPath}basePack`, "A base pack must target the same module");
+        packEdges.set(pack.moduleId, [base.moduleId]);
+      }
+    } else {
+      packEdges.set(pack.moduleId, []);
+    }
+  }
+
+  const detectCycle = (graph: Map<string, string[]>, name: string) => {
+    const visiting = new Set<string>();
+    const visited = new Set<string>();
+    let found = false;
+    const visit = (id: string) => {
+      if (visiting.has(id)) {
+        found = true;
+        return;
+      }
+      if (visited.has(id)) return;
+      visiting.add(id);
+      for (const next of graph.get(id) ?? []) visit(next);
+      visiting.delete(id);
+      visited.add(id);
+    };
+    for (const id of graph.keys()) visit(id);
+    if (found) add("dependencyGraph", `${name} contain a dependency cycle`);
+  };
+  detectCycle(moduleEdges, "Module dependencies or extends links");
+  detectCycle(packEdges, "Pack base links");
+
+  return issues.length ? { valid: false, issues } : { valid: true, issues: [] };
 }
 
 /** True when reverting the package cannot remove any migration step already present now. */
@@ -394,6 +625,7 @@ const NEED = {
   write: /^([a-z][a-z0-9_]*(?:\.[a-z0-9_-]+)+):write$/,
   connection: /^connection:[a-z0-9][a-z0-9._-]{0,79}:use$/,
   net: /^net:[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?$/,
+  provider: /^provider:[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/,
 };
 
 /**
@@ -445,23 +677,34 @@ export function checkModuleContract(raw: unknown): {
   });
   const dependencies = new Set<string>();
   c.depends.forEach((raw, index) => {
-    const at = raw.indexOf("@");
-    const id = at > 0 ? raw.slice(0, at) : raw;
-    const range = at > 0 ? raw.slice(at + 1) : "*";
-    const rangeParts = range.split(/\s+/).filter(Boolean);
-    const validRange =
-      range === "*" ||
-      range === "latest" ||
-      (rangeParts.length > 0 &&
-        rangeParts.every((part) =>
-          /^(?:\^|~|>=|<=|>|<|=)?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(part),
-        ));
-    if (!moduleId.safeParse(id).success || !validRange || id === c.id)
+    const reference = parseModuleReference(raw);
+    if (!reference.valid || reference.moduleId === c.id)
       add(`depends.${index}`, "dependency", `${raw} is not a valid base module dependency`);
-    if (dependencies.has(id))
-      add(`depends.${index}`, "duplicate", `Base module ${id} is listed twice`);
-    dependencies.add(id);
+    if (dependencies.has(reference.moduleId))
+      add(`depends.${index}`, "duplicate", `Base module ${reference.moduleId} is listed twice`);
+    dependencies.add(reference.moduleId);
   });
+  if (c.layer === "service" && (c.depends.length > 0 || c.extends !== undefined))
+    add("layer", "layer", "A service has no module dependencies and cannot extend a module");
+  if (c.layer === "bridge" && c.extends !== undefined)
+    add("extends", "layer", "A bridge cannot extend a base module");
+  if (c.extends !== undefined) {
+    const base = parseModuleReference(c.extends);
+    if (
+      !base.valid ||
+      !base.hasRange ||
+      base.versionRange === "*" ||
+      base.versionRange === "latest"
+    )
+      add(
+        "extends",
+        "dependency",
+        "extends must name one base module with an explicit version range",
+      );
+    if (base.moduleId === c.id) add("extends", "dependency", "A module cannot extend itself");
+    if (dependencies.has(base.moduleId))
+      add("extends", "duplicate", "The base module in extends must not also appear in depends");
+  }
   if (c.systemRolePresets) {
     for (const role of ["member", "viewer"] as const) {
       for (const [name, preset] of Object.entries(c.systemRolePresets[role])) {
@@ -572,7 +815,7 @@ export function checkModuleContract(raw: unknown): {
         add(
           `${path}.needs`,
           "need",
-          `${need}: use <id>:call, <id>:read, <table>:write, connection:<id>:use or net:<host>`,
+          `${need}: use <id>:call, <id>:read, <table>:write, connection:<id>:use, net:<host> or provider:<slot>`,
         );
     }
   });

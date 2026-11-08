@@ -1,0 +1,157 @@
+{
+  "cases": [
+    {
+      "name": "service has no install-time dependencies",
+      "expectedValid": true,
+      "descriptor": {
+        "kind": "module", "moduleId": "mail_service", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "service", "dependencies": [], "migrationSteps": []
+      },
+      "dependencyDescriptors": []
+    },
+    {
+      "name": "business module depends on service",
+      "expectedValid": true,
+      "descriptor": {
+        "kind": "module", "moduleId": "shop", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business",
+        "dependencies": [{ "moduleId": "mail_service", "versionRange": "^1.0.0" }], "migrationSteps": []
+      },
+      "dependencyDescriptors": [{
+        "kind": "module", "moduleId": "mail_service", "version": "1.0.0",
+        "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "service", "dependencies": [], "migrationSteps": []
+      }]
+    },
+    {
+      "name": "business module extends one business base",
+      "expectedValid": true,
+      "descriptor": {
+        "kind": "module", "moduleId": "acct_ar", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business",
+        "extends": { "moduleId": "acct_core", "versionRange": "^1.0.0" },
+        "dependencies": [], "migrationSteps": []
+      },
+      "dependencyDescriptors": [{
+        "kind": "module", "moduleId": "acct_core", "version": "1.0.0",
+        "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": []
+      }]
+    },
+    {
+      "name": "bridge depends on service and business modules",
+      "expectedValid": true,
+      "descriptor": {
+        "kind": "module", "moduleId": "crm_accounting_bridge", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "bridge",
+        "dependencies": [
+          { "moduleId": "crm", "versionRange": "^1.0.0" },
+          { "moduleId": "acct_core", "versionRange": "^1.0.0" },
+          { "moduleId": "mail_service", "versionRange": "^1.0.0" }
+        ], "migrationSteps": []
+      },
+      "dependencyDescriptors": [
+        { "kind": "module", "moduleId": "crm", "version": "1.0.0", "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": [] },
+        { "kind": "module", "moduleId": "acct_core", "version": "1.0.0", "packageDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": [] },
+        { "kind": "module", "moduleId": "mail_service", "version": "1.0.0", "packageDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "layer": "service", "dependencies": [], "migrationSteps": [] }
+      ]
+    },
+    {
+      "name": "pack targets a module and extends a pack for the same module",
+      "expectedValid": true,
+      "descriptor": {
+        "kind": "pack", "moduleId": "lv_pack", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "dependencies": [], "migrationSteps": [],
+        "targetModule": "acct_core", "targetVersionRange": "^1.0.0",
+        "basePack": { "packageId": "eu_pack", "versionRange": "^1.0.0" }
+      },
+      "dependencyDescriptors": [
+        { "kind": "module", "moduleId": "acct_core", "version": "1.0.0", "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": [] },
+        { "kind": "pack", "moduleId": "eu_pack", "version": "1.0.0", "packageDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "dependencies": [], "migrationSteps": [], "targetModule": "acct_core", "targetVersionRange": "^1.0.0" }
+      ]
+    },
+    {
+      "name": "service cannot depend on a business module",
+      "expectedValid": false,
+      "descriptor": {
+        "kind": "module", "moduleId": "mail_service", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "service",
+        "dependencies": [{ "moduleId": "crm", "versionRange": "^1.0.0" }], "migrationSteps": []
+      },
+      "dependencyDescriptors": [{
+        "kind": "module", "moduleId": "crm", "version": "1.0.0",
+        "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": []
+      }]
+    },
+    {
+      "name": "business module cannot use depends for another business module",
+      "expectedValid": false,
+      "descriptor": {
+        "kind": "module", "moduleId": "crm", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business",
+        "dependencies": [{ "moduleId": "acct_core", "versionRange": "^1.0.0" }], "migrationSteps": []
+      },
+      "dependencyDescriptors": [{
+        "kind": "module", "moduleId": "acct_core", "version": "1.0.0",
+        "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": []
+      }]
+    },
+    {
+      "name": "pack base must target the same module",
+      "expectedValid": false,
+      "descriptor": {
+        "kind": "pack", "moduleId": "lv_pack", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "dependencies": [], "migrationSteps": [],
+        "targetModule": "acct_core", "targetVersionRange": "^1.0.0",
+        "basePack": { "packageId": "eu_pack", "versionRange": "^1.0.0" }
+      },
+      "dependencyDescriptors": [
+        { "kind": "module", "moduleId": "acct_core", "version": "1.0.0", "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": [] },
+        { "kind": "pack", "moduleId": "eu_pack", "version": "1.0.0", "packageDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "dependencies": [], "migrationSteps": [], "targetModule": "another_module", "targetVersionRange": "^1.0.0" },
+        { "kind": "module", "moduleId": "another_module", "version": "1.0.0", "packageDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11", "requiredCoreRange": "^0.1.0", "layer": "business", "dependencies": [], "migrationSteps": [] }
+      ]
+    },
+    {
+      "name": "extends cycle is rejected",
+      "expectedValid": false,
+      "descriptor": {
+        "kind": "module", "moduleId": "business_a", "version": "1.0.0",
+        "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business",
+        "extends": { "moduleId": "business_b", "versionRange": "^1.0.0" },
+        "dependencies": [], "migrationSteps": []
+      },
+      "dependencyDescriptors": [{
+        "kind": "module", "moduleId": "business_b", "version": "1.0.0",
+        "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "channel": "stable", "state": "listed", "contractVersion": "0.1.0-alpha.11",
+        "requiredCoreRange": "^0.1.0", "layer": "business",
+        "extends": { "moduleId": "business_a", "versionRange": "^1.0.0" },
+        "dependencies": [], "migrationSteps": []
+      }]
+    }
+  ]
+}

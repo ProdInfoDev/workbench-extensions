@@ -31,7 +31,9 @@ refinements and may be added in later module versions.
   "version": "1.2.0",
   "license": "MIT",
   "source": "available",
-  "depends": ["platform@^1.0.0"],
+  "layer": "business",
+  "depends": [],
+  "extends": "accounting_core@^1.0.0",
   "libraries": [
     {
       "name": "@prodinfo/ui",
@@ -113,7 +115,9 @@ refinements and may be added in later module versions.
 
 | Field | Meaning |
 |---|---|
-| `depends` | Required base modules, optionally pinned by a version range as `<module>@^1.0.0`; module-to-module dependency grants no access to the base module's data. |
+| `layer` | `service`, `business` or `bridge`; omitted means `business`. Services have no package dependencies, business modules may depend on services, and bridges may depend on services and business modules. |
+| `depends` | Required lower-layer modules, optionally pinned by a semantic version range as `<module>@^1.0.0`; dependency grants no access to the other module's data. Core is implicit and is not listed here. |
+| `extends` | Optional single base business module with an explicit version range, written `<module>@^1.0.0`. It is allowed only on a business module and must not also appear in `depends`. |
 | `libraries` | Code-only packages bundled into the module. Each entry pins its package name, version, `sha256:` digest, license and source availability; a library has no tables, commands, views, permissions or UI of its own. |
 | `systemRolePresets` | Named permission sets for `member` and `viewer`. The first preset listed for a role is that role's module default; hosts may offer the remaining presets in Roles & permissions. |
 | `access.permissions` | Permission identifiers and labels a module's resources use; preset permissions must refer to these declarations. |
@@ -124,7 +128,7 @@ refinements and may be added in later module versions.
 | `tables.*.columns` | Column names and coarse kind (`text` or `other`), with an optional privacy class: `personal`, `confidential` or `secret`. Column classes apply to any kind; text columns without a class produce a warning from `checkModuleContract`, not a load error. Declare actual table columns so hosts can use the metadata for masked sandboxes. |
 | `effect` | The command boundary's effect: `read`, `configure`, `createArtifact`, `submit`, `controlRun`. |
 | `ai` | How the AI console may do it for the person: `auto`, `confirm`, `never`. Undeclared: `confirm` for public items, `never` for private ones. |
-| `routines[].needs` | Exactly what the routine may do; approved by an owner or admin on activation. |
+| `routines[].needs` | Exactly what the routine may do; approved by an owner or admin on activation. Core provider slots use `provider:mail.send` or `provider:message.send`. |
 | `access.events.*.notification` | User-facing event kind, severity and payload shape. The event's `subscribe` roles govern who may attach automation to it. |
 | `ui.displayName` | Optional human-readable module name used by the host when it labels module-owned items. |
 | `ui.screens` / `ui.navLinks` | Screens and cross-group navigation links contributed to the host's common shell menu groups (`navGroup`), filtered by `requiredCapabilities`. Screen routes may contain whole-segment `:name` parameters; parameterized screens are routable but hidden from navigation and command search. `hidden: true` hides a fixed screen from those lists too. |
@@ -167,9 +171,10 @@ person who created the key.
 | A `viewer` is never listed for a command that changes state, a table `write`, or a routine `run` | `viewer_write` |
 | `ai: auto` only for `read`, `configure`, `createArtifact`; a private item may only say `ai: never` | `ai_level`, `private_ai` |
 | Library package names are unique, and each package has a semantic version, content digest, license and source availability; base module ids and version ranges are valid and unique | `schema`, `duplicate`, `dependency` |
+| Services declare no dependencies or base module; bridges declare no base module; `extends` has an explicit range, cannot refer to self, and cannot duplicate `depends` | `layer`, `dependency`, `duplicate` |
 | Table column names and `kind` values are valid; a text column without `classification` is returned in `warnings` and does not fail the contract | schema error / `unclassified_text_column` warning |
 | Preset names are valid, permissions are unique and every preset permission is declared by the module | `schema`, `duplicate`, `system_role_preset` |
-| Routine `needs` use `<id>:call`, `<id>:read`, `<table>:write` (own tables only), `connection:<id>:use` or `net:<host>`, without repeats | `need`, `duplicate` |
+| Routine `needs` use `<id>:call`, `<id>:read`, `<table>:write` (own tables only), `connection:<id>:use`, `net:<host>` or `provider:<slot>`, without repeats | `need`, `duplicate` |
 | Screens do not take host routes (`/admin`, `/api`, `/extensions`, `/login`, `/review`, `/settings`, `/v1`); screens, links and cards require only the module's own `<module>:` capabilities; UI ids are unique | `route`, `capability`, `duplicate` |
 | `docs.context` is a relative path inside the module | `docs_path` |
 | A fork has its own `x_` id, records its origin (module, version, `sha256:` digest, license) and only comes from a module whose source is `available` and whose license is not closed | `provenance` |
@@ -179,13 +184,19 @@ applies the default `ai` for an item; `canForkModule` is the fork test.
 
 ## Registry descriptors and package rollback
 
-The module registry, rather than the module publisher, owns the release descriptor. The generated
-`registry-descriptor.schema.json` and `signed-registry-descriptor.schema.json` describe these
-records. A descriptor contains the module id and version, immutable package digest, `stable` or
-`beta` channel, contract version, required Core version range, dependencies, and the migration steps
-in that package. Its `state` is `listed`, `unlisted` or `yanked`. Unlisted and yanked versions carry
-a reason; a yanked version also names its replacement version. A listed version cannot carry a
-state reason or replacement.
+The module registry, rather than the module publisher, owns the release descriptor. Alpha.11 adds
+`kind: "module" | "pack" | "library"`, `layer`, and `extends`. Module descriptors require a
+`service`, `business` or `bridge` layer. A business module may extend one base business module with
+a version range. A pack names one `targetModule` and `targetVersionRange`; its optional `basePack`
+must target that same module. Packs and bundled libraries have no install-time dependencies or
+migrations.
+
+The generated `registry-descriptor.schema.json` and `signed-registry-descriptor.schema.json`
+describe the records. A descriptor contains the package id and version, immutable package digest,
+`stable` or `beta` channel, contract version, required Core version range, dependencies, and the
+migration steps in that package. Its `state` is `listed`, `unlisted` or `yanked`. Unlisted and
+yanked versions carry a reason; a yanked version also names its replacement version. A listed
+version cannot carry a state reason or replacement.
 
 The registry signs canonical JSON for the `descriptor` with Ed25519 and a registry signing key that
 is separate from the licence key:
@@ -193,14 +204,16 @@ is separate from the licence key:
 ```json
 {
   "descriptor": {
+    "kind": "module",
     "moduleId": "x_shop",
     "version": "1.2.1",
     "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "channel": "stable",
     "state": "listed",
-    "contractVersion": "0.1.0-alpha.10",
+    "contractVersion": "0.1.0-alpha.11",
     "requiredCoreRange": "^0.1.0",
-    "dependencies": [{ "moduleId": "platform", "versionRange": "^1.0.0" }],
+    "layer": "business",
+    "dependencies": [],
     "migrationSteps": ["0001_create_orders.sql"]
   },
   "signature": { "algorithm": "Ed25519", "keyId": "registry-2026-01", "value": "<base64>" }
@@ -208,7 +221,11 @@ is separate from the licence key:
 ```
 
 `checkRegistryDescriptor` validates structure, state fields, version ranges, dependencies and unique
-migration steps. `isPackageOnlyRollback(current, target)` returns true only when every migration
+migration steps. `checkDependencyLayers(descriptor, dependencyDescriptors)` validates layer direction,
+pack targets and acyclicity over the selected graph. The cross-language cases are published in
+`packages/contracts/fixtures/dependency-layers.json`, including valid service/business/bridge and
+pack graphs, invalid edges, and an `extends` cycle attempt. The Java registry and Core consume the
+same fixture file. `isPackageOnlyRollback(current, target)` returns true only when every migration
 step in the current version is already present in the target version; package-only rollback then
 changes code without reversing database migrations.
 

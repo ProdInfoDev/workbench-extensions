@@ -1,0 +1,22 @@
+{
+  "descriptor": {
+    "kind": "pack",
+    "moduleId": "lv_pack",
+    "version": "1.0.0",
+    "packageDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "channel": "stable",
+    "state": "listed",
+    "contractVersion": "0.1.0-alpha.11",
+    "requiredCoreRange": "^0.1.0",
+    "dependencies": [],
+    "migrationSteps": [],
+    "targetModule": "acct_core",
+    "targetVersionRange": "^1.0.0",
+    "basePack": { "packageId": "eu_pack", "versionRange": "^1.0.0" }
+  },
+  "signature": {
+    "algorithm": "Ed25519",
+    "keyId": "registry-2026-01",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  }
+}

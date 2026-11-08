@@ -1,13 +1,15 @@
 {
   "descriptor": {
+    "kind": "module",
     "moduleId": "x_shop",
     "version": "1.2.1",
     "packageDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "channel": "stable",
     "state": "listed",
-    "contractVersion": "0.1.0-alpha.10",
+    "contractVersion": "0.1.0-alpha.11",
     "requiredCoreRange": "^0.1.0",
-    "dependencies": [{ "moduleId": "platform", "versionRange": "^1.0.0" }],
+    "layer": "business",
+    "dependencies": [],
     "migrationSteps": ["0001_create_orders.sql", "0002_add_notes.sql"]
   },
   "signature": {

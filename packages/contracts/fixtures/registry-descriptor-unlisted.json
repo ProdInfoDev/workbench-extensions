@@ -1,13 +1,15 @@
 {
   "descriptor": {
+    "kind": "module",
     "moduleId": "x_shop",
     "version": "1.2.1-beta.1",
     "packageDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
     "channel": "beta",
     "state": "unlisted",
     "reason": "Available by direct publisher reference during validation.",
-    "contractVersion": "0.1.0-alpha.10",
+    "contractVersion": "0.1.0-alpha.11",
     "requiredCoreRange": ">=0.1.0 <0.2.0",
+    "layer": "business",
     "dependencies": [],
     "migrationSteps": []
   },

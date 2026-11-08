@@ -6,6 +6,7 @@ import {
   SignedRegistryDescriptorSchema,
   canForkModule,
   checkModuleContract,
+  checkDependencyLayers,
   checkRegistryDescriptor,
   effectiveAiLevel,
   isPackageOnlyRollback,
@@ -39,7 +40,8 @@ test("the reference declaration is valid and keeps its public/private split", ()
     hidden: true,
     requiredCapabilities: ["x_shop:read"],
   });
-  assert.deepEqual(contract.depends, ["platform@^1.0.0"]);
+  assert.equal(contract.layer, "business");
+  assert.deepEqual(contract.depends, []);
   assert.equal(contract.libraries[0]?.name, "@prodinfo/ui");
   assert.deepEqual(Object.keys(contract.systemRolePresets?.member ?? {}), [
     "standard",
@@ -61,6 +63,7 @@ test("a declaration with only identity is valid and closed by default", () => {
   assert.deepEqual(c.access.commands, {});
   assert.deepEqual(writableTables(c), {});
   assert.equal(c.routines.length, 0);
+  assert.equal(c.layer, "business", "business is the default layer");
 });
 
 test("only tables that list write are writable outside the module; [] means owner only", () => {
@@ -133,6 +136,8 @@ test("registry descriptors validate listed, unlisted and yanked signed fixtures"
     "registry-descriptor-listed.json",
     "registry-descriptor-unlisted.json",
     "registry-descriptor-yanked.json",
+    "registry-descriptor-pack.json",
+    "registry-descriptor-library.json",
   ]) {
     const fixture = load(name);
     assert.equal(SignedRegistryDescriptorSchema.safeParse(fixture).success, true, name);
@@ -268,6 +273,55 @@ test("routine needs: known forms only, own tables for writes, no duplicates", ()
   assert.ok(codes(needs(["net:Bad Host"])).includes("need"));
   assert.ok(codes(needs(["net:a.example", "net:a.example"])).includes("duplicate"));
   assert.deepEqual(needs(["x_shop.orders:read", "ar.invoice.create:call"]), []);
+  assert.deepEqual(needs(["provider:mail.send", "provider:message.send"]), []);
+  assert.ok(codes(needs(["provider:Mail.send"])).includes("need"));
+});
+
+test("module layer declarations constrain local dependency and extension shapes", () => {
+  const layerIssues = (change: (m: any) => void) =>
+    problems(change).filter((issue) => issue.code === "layer");
+  assert.equal(
+    layerIssues((m) => {
+      m.layer = "service";
+      m.depends = ["mailer@^1.0.0"];
+    }).length,
+    1,
+    "services cannot declare dependencies",
+  );
+  assert.equal(
+    layerIssues((m) => {
+      m.layer = "bridge";
+      m.extends = "core@^1.0.0";
+    }).length,
+    1,
+    "bridges cannot extend modules",
+  );
+  assert.ok(
+    codes(
+      problems((m) => {
+        m.extends = "core@^1.0.0";
+        m.depends = ["core@~1.0.0"];
+      }),
+    ).includes("duplicate"),
+  );
+  assert.ok(codes(problems((m) => (m.extends = "x_shop@^1.0.0"))).includes("dependency"));
+  assert.ok(codes(problems((m) => (m.extends = "core"))).includes("dependency"));
+  assert.deepEqual(
+    problems((m) => (m.extends = "core@^1.0.0")),
+    [],
+  );
+});
+
+test("shared package-layer fixtures cover valid and invalid dependency graphs", () => {
+  const fixture = load("dependency-layers.json");
+  for (const item of fixture.cases) {
+    const result = checkDependencyLayers(item.descriptor, item.dependencyDescriptors);
+    assert.equal(
+      result.valid,
+      item.expectedValid,
+      `${item.name}: ${JSON.stringify(result.issues)}`,
+    );
+  }
 });
 
 test("libraries are content-pinned and base module dependencies are well formed", () => {

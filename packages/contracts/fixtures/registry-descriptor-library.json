@@ -1,0 +1,19 @@
+{
+  "descriptor": {
+    "kind": "library",
+    "moduleId": "shared_utils",
+    "version": "1.0.0",
+    "packageDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "channel": "stable",
+    "state": "listed",
+    "contractVersion": "0.1.0-alpha.11",
+    "requiredCoreRange": "^0.1.0",
+    "dependencies": [],
+    "migrationSteps": []
+  },
+  "signature": {
+    "algorithm": "Ed25519",
+    "keyId": "registry-2026-01",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  }
+}

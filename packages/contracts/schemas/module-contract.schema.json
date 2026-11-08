@@ -70,6 +70,15 @@
       ],
       "additionalProperties": false
     },
+    "layer": {
+      "default": "business",
+      "type": "string",
+      "enum": [
+        "service",
+        "business",
+        "bridge"
+      ]
+    },
     "depends": {
       "default": [],
       "maxItems": 100,
@@ -79,6 +88,11 @@
         "minLength": 1,
         "maxLength": 120
       }
+    },
+    "extends": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
     },
     "libraries": {
       "default": [],
@@ -828,6 +842,7 @@
     "version",
     "license",
     "source",
+    "layer",
     "depends",
     "libraries",
     "access",
