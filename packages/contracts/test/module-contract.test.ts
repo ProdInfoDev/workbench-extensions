@@ -10,6 +10,8 @@ import {
   checkRegistryDescriptor,
   effectiveAiLevel,
   isPackageOnlyRollback,
+  isAllowedOpenSourceSpdxLicense,
+  ALLOWED_OPEN_SOURCE_SPDX_LICENSES,
   parseModuleContract,
   writableTables,
 } from "../src/index.ts";
@@ -24,6 +26,31 @@ function problems(change: (m: any) => void) {
   return checkModuleContract(m).issues;
 }
 const codes = (issues: readonly { code: string }[]) => issues.map((i) => i.code);
+
+test("direct-install SPDX validator accepts allowed licences, aliases, and combinations", () => {
+  assert.equal(ALLOWED_OPEN_SOURCE_SPDX_LICENSES.length, 17);
+  for (const license of ALLOWED_OPEN_SOURCE_SPDX_LICENSES)
+    assert.equal(isAllowedOpenSourceSpdxLicense(license), true, license);
+  for (const alias of ["LGPL-2.1", "LGPL-3.0", "GPL-2.0", "GPL-3.0", "AGPL-3.0"])
+    assert.equal(isAllowedOpenSourceSpdxLicense(alias), true, alias);
+  assert.equal(isAllowedOpenSourceSpdxLicense("MIT OR Apache-2.0"), true);
+  assert.equal(isAllowedOpenSourceSpdxLicense("(MIT AND BSD-3-Clause) OR ISC"), true);
+});
+
+test("direct-install SPDX validator rejects unknown, custom, malformed and WITH licences", () => {
+  for (const license of [
+    "",
+    "UNLICENSED",
+    "BSL-1.1",
+    "MIT WITH LLVM-exception",
+    "MIT OR Proprietary",
+    "MIT AND",
+    "MIT OR OR ISC",
+    "(MIT OR ISC",
+    "MIT ISC",
+  ])
+    assert.equal(isAllowedOpenSourceSpdxLicense(license), false, license);
+});
 
 test("the reference declaration is valid and keeps its public/private split", () => {
   const result = checkModuleContract(valid());

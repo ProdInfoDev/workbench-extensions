@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.11";
+export const CONTRACT_VERSION = "0.1.0-alpha.12";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -125,6 +125,11 @@ export {
   type FileCall,
   type RoutineFiles,
 } from "./files.ts";
+
+export {
+  ALLOWED_OPEN_SOURCE_SPDX_LICENSES,
+  isAllowedOpenSourceSpdxLicense,
+} from "./open-source-licenses.ts";
 
 export {
   AI_AUTO_EFFECTS,

@@ -5,7 +5,7 @@ Last updated: 2026-11-08.
 ## Current State
 
 - **Repository**: `ProdInfoDev/workbench-extensions` (**Public / MIT**), replacing the archived `prodinfo-extensions` repository.
-- **Contract Package Source (not registry-published)**: `@prodinfo/extension-contracts` (`0.1.0-alpha.11`) adds table-column privacy classification, package layers and acyclic dependency fixtures, and registry descriptors for modules, packs and libraries. Core adopts the locally packed artifact by re-pinning `vendor/contract-pin.json`; npm publication remains skipped.
+- **Contract Package Source (not registry-published)**: `@prodinfo/extension-contracts` (`0.1.0-alpha.12`) adds the direct-install SPDX allow-list validator for OSI licences and AND/OR expressions. Earlier alpha.11 additions include table-column privacy classification, package layers and acyclic dependency fixtures, and registry descriptors for modules, packs and libraries. Core adopts the locally packed artifact by re-pinning `vendor/contract-pin.json`; npm publication remains skipped.
 - **Module Plugin Contract Specification ([`docs/module-contract.md`](module-contract.md))**:
   - Defines the public module contract matching `workbench-core` [ADR 0014](../../workbench-core/docs/adr/0014-module-public-contract-and-console-access.md) and ADR 0015:
     - 4 host system roles (`owner`, `admin`, `member`, `viewer`) + optional module roles (`access.roles`).
@@ -22,4 +22,4 @@ Last updated: 2026-11-08.
   - `files.ts`: Managed routine text file pages, calls, and acknowledgements preserving Unicode/BOM/CRLF.
   - `module-contract.ts`: executable module contract (`ModuleContractSchema`, `checkModuleContract`, `writableTables`, `effectiveAiLevel`, `canForkModule`) with layers, dependencies, provider-slot needs, libraries/presets and column-classification checks; registry descriptor schemas for modules/packs/libraries, signed envelopes, `checkRegistryDescriptor`, `checkDependencyLayers` and `isPackageOnlyRollback`; shared valid/invalid graph fixtures and generated JSON Schemas.
 - **Verification**:
-  - `pnpm run check` passes for alpha.11: Biome format check, TypeScript typecheck, contract tests, package build, and generated JSON Schema drift verification. The alpha.11 package is built locally for Core to pin; npm publication remains skipped.
+  - `pnpm run check` passes for alpha.12: Biome format check, TypeScript typecheck, contract tests, package build, and generated JSON Schema drift verification. The alpha.12 package is built locally for Core to pin; npm publication remains skipped.
