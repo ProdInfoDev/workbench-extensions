@@ -39,7 +39,7 @@ a separately authorized action once a transport broker exists. Failed checks ret
 
 Eleven public tests plus format/type/build/schema drift pass locally, including four new cases for
 preserved values, non-coercion/redacted issues, bad declarations/bounds and hostile JSON. Public
-[three-platform CI](https://github.com/datatoi/prodinfo-extensions/actions/runs/40658646831) passed
+three-platform CI passed
 at 15e2e88 on Windows/macOS/Linux. Reference host 220709f passes 59 tests and two built smoke paths
 on all three OS plus 30 PG18 cases. It proves exact immutable bindings/checks, independent activation
 CAS/history, explicit input ownership/digests, expiry, actor/tenant denial, rollback, corruption and

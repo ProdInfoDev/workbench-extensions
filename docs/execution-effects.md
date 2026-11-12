@@ -19,7 +19,7 @@ submission as configure or assume it is safe to retry with a different request i
 
 Thirteen public tests/type/build/format/generated-schema checks pass locally. The two added cases
 cover explicit effects and the distinction between admission result data and an unsupported
-accepted-job envelope. [CI](https://github.com/datatoi/prodinfo-extensions/actions/runs/40665029899)
+accepted-job envelope. CI
 passed at 18c1b14 on Windows/macOS/Linux. Reference host 6f16218 passes 77 tests and three built
 smokes on all three OS plus 41 isolated PG18 cases. It proves durable one-step admission/current
 pins, claims/capacity, broker/result fencing, cancellation/takeover and process-kill recovery.

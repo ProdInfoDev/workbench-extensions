@@ -33,7 +33,7 @@ or workspace policy. In this short-command subset recovery is stop. These catego
 durable credit/approval waits or erase the separately planned soft-credit workflow policy.
 
 Conformance: seven public tests/type/format/build/schema drift pass locally and in
-[CI](https://github.com/datatoi/prodinfo-extensions/actions/runs/40653044117) at 46d54fc on Windows/
+CI at 46d54fc on Windows/
 macOS/Linux. Reference host 2ecd1d4 passes 49 tests/two built smoke paths on all three OS plus
 21 isolated PG18 cases: namespace/quota/transaction/replay and live exact-ref guest denial/revocation.
 Its synthetic unquoted CSV fixture preserves literal IDs/CRLF through a retained routine/config pin,
