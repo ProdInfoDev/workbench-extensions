@@ -172,3 +172,12 @@ export {
   type SystemRolePresets,
   type Visibility,
 } from "./module-contract.ts";
+export {
+  MARKETPLACE_CONNECTOR_IDS,
+  MARKETPLACE_CONFORMANCE_SPECS,
+  MarketplaceConformanceSpecSchema,
+  MarketplaceProductFixtureSchema,
+  SYNTHETIC_MARKETPLACE_FIXTURES,
+  type MarketplaceConnectorId,
+  type MarketplaceProductFixture,
+} from "./marketplace-conformance.ts";
