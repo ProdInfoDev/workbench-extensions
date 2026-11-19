@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.13";
+export const CONTRACT_VERSION = "0.1.0-alpha.14";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -42,6 +42,8 @@ export const ErrorCodeSchema = z.enum([
   "resource_limit",
   "unavailable",
 ]);
+export const ErrorRecoverySchema = z.enum(["correctInput", "retry", "stop"]);
+export type ErrorRecovery = z.infer<typeof ErrorRecoverySchema>;
 export const ReplySchema = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("result"),
@@ -55,7 +57,7 @@ export const ReplySchema = z.discriminatedUnion("kind", [
     receiptId: z.uuid().optional(),
     code: ErrorCodeSchema,
     message: z.string().min(1).max(300),
-    recovery: z.enum(["correctInput", "stop"]),
+    recovery: ErrorRecoverySchema,
   }),
 ]);
 export type Operation = z.infer<typeof OperationSchema>;
@@ -181,3 +183,29 @@ export {
   type MarketplaceConnectorId,
   type MarketplaceProductFixture,
 } from "./marketplace-conformance.ts";
+export {
+  BUSINESS_AREAS,
+  BUSINESS_AREA_LABELS,
+  BusinessAreaSchema,
+  PLAN_TEMPLATE_SCALAR_TYPES,
+  PLAN_TEMPLATE_TRIGGER_KINDS,
+  PackManifestSchema,
+  PlanTemplateAllowedValueRuleSchema,
+  PlanTemplateAmountRuleSchema,
+  PlanTemplateContractSchema,
+  PlanTemplateFieldSchema,
+  PlanTemplateParameterSchema,
+  PlanTemplateStepSchema,
+  PlanTemplateSuggestedLimitsSchema,
+  PlanTemplateTriggerKindSchema,
+  TemplatePackageManifestSchema,
+  checkPackManifest,
+  checkPlanTemplatePlaceholders,
+  checkTemplatePackageManifest,
+  type BusinessArea,
+  type PackManifest,
+  type PlanTemplateContract,
+  type PlanTemplateIssue,
+  type PlanTemplateSuggestedLimits,
+  type TemplatePackageManifest,
+} from "./plan-templates.ts";

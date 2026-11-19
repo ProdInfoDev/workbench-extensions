@@ -575,6 +575,361 @@
         "additionalProperties": false
       }
     },
+    "planTemplates": {
+      "default": [],
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "default": "",
+            "type": "string",
+            "maxLength": 1000
+          },
+          "businessArea": {
+            "type": "string",
+            "enum": [
+              "close_and_reporting",
+              "banking_and_payments",
+              "sales_and_receivables",
+              "purchasing_and_payables",
+              "inventory_and_production",
+              "tax_and_statutory",
+              "subscriptions",
+              "crm",
+              "data_and_integrations",
+              "e_commerce"
+            ]
+          },
+          "triggers": {
+            "default": [
+              "manual"
+            ],
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "manual",
+                "schedule",
+                "event"
+              ]
+            }
+          },
+          "schedule": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "hasExternalEffects": {
+            "default": false,
+            "type": "boolean"
+          },
+          "suggestedLimits": {
+            "type": "object",
+            "properties": {
+              "maxSteps": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200
+              },
+              "maxStepAmount": {
+                "type": "object",
+                "properties": {
+                  "pointer": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "format": "starts_with",
+                    "pattern": "^\\/.*"
+                  },
+                  "max": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?\\d+(?:\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "operationId": {
+                    "type": "string",
+                    "maxLength": 160,
+                    "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+                  }
+                },
+                "required": [
+                  "pointer",
+                  "max"
+                ],
+                "additionalProperties": false
+              },
+              "maxTotalAmount": {
+                "type": "object",
+                "properties": {
+                  "pointer": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "format": "starts_with",
+                    "pattern": "^\\/.*"
+                  },
+                  "max": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^-?\\d+(?:\\.\\d{1,6})?$"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "operationId": {
+                    "type": "string",
+                    "maxLength": 160,
+                    "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+                  }
+                },
+                "required": [
+                  "pointer",
+                  "max"
+                ],
+                "additionalProperties": false
+              },
+              "allowedValues": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "pointer": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "format": "starts_with",
+                      "pattern": "^\\/.*"
+                    },
+                    "values": {
+                      "minItems": 1,
+                      "maxItems": 200,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      }
+                    },
+                    "prefix": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    },
+                    "operationId": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+                    }
+                  },
+                  "required": [
+                    "pointer"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "allowedTriggers": {
+                "minItems": 1,
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "parameters": {
+            "default": [],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-zA-Z0-9_]{0,39}$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "string",
+                        "integer",
+                        "number",
+                        "decimal",
+                        "boolean",
+                        "date",
+                        "month"
+                      ]
+                    },
+                    "required": {
+                      "default": true,
+                      "type": "boolean"
+                    },
+                    "default": {
+                      "$ref": "#/$defs/__schema0"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "label",
+                    "type",
+                    "required"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-zA-Z0-9_]{0,39}$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "required": {
+                      "default": true,
+                      "type": "boolean"
+                    },
+                    "items": {
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_]{0,39}$"
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "string",
+                              "integer",
+                              "number",
+                              "decimal",
+                              "boolean",
+                              "date",
+                              "month"
+                            ]
+                          },
+                          "required": {
+                            "default": true,
+                            "type": "boolean"
+                          },
+                          "default": {
+                            "$ref": "#/$defs/__schema0"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "label",
+                          "type",
+                          "required"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "label",
+                    "type",
+                    "required",
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "steps": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "operationId": {
+                  "type": "string",
+                  "maxLength": 160,
+                  "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+                },
+                "input": {
+                  "$ref": "#/$defs/__schema1"
+                },
+                "forEach": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_]{0,39}$"
+                },
+                "ruleRef": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                }
+              },
+              "required": [
+                "operationId",
+                "input"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "triggers",
+          "hasExternalEffects",
+          "parameters",
+          "steps"
+        ],
+        "additionalProperties": false
+      }
+    },
     "ui": {
       "type": "object",
       "properties": {
@@ -927,7 +1282,72 @@
     "depends",
     "libraries",
     "access",
-    "routines"
+    "routines",
+    "planTemplates"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/__schema0"
+          }
+        }
+      ]
+    },
+    "__schema1": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/__schema1"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/__schema1"
+          }
+        }
+      ]
+    }
+  }
 }

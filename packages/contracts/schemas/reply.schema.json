@@ -69,6 +69,7 @@
           "type": "string",
           "enum": [
             "correctInput",
+            "retry",
             "stop"
           ]
         }

@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { assertBoundedJson } from "./json.ts";
+import {
+  BusinessAreaSchema,
+  PlanTemplateContractSchema,
+  checkPlanTemplatePlaceholders,
+} from "./plan-templates.ts";
 
 /**
  * Executable module contract (see docs/module-contract.md). A module is a plugin: it declares its
@@ -231,7 +236,7 @@ const registryDescriptorFields = {
   requiredCoreRange: versionRange,
 };
 
-/** Signed registry metadata for one immutable module, pack or library package version. */
+/** Signed registry metadata for one immutable module, pack, library or template package version. */
 export const RegistryDescriptorSchema = z.discriminatedUnion("kind", [
   z.strictObject({
     ...registryDescriptorFields,
@@ -258,6 +263,15 @@ export const RegistryDescriptorSchema = z.discriminatedUnion("kind", [
     kind: z.literal("library"),
     dependencies: z.array(registryDependency).max(0),
     migrationSteps: z.array(migrationStep).max(0),
+  }),
+  z.strictObject({
+    ...registryDescriptorFields,
+    kind: z.literal("template"),
+    /** Required modules whose commands the declarative templates invoke. */
+    dependencies: z.array(registryDependency).min(1).max(100),
+    migrationSteps: z.array(migrationStep).max(0),
+    businessArea: BusinessAreaSchema,
+    targetPack: registryPackageReference.optional(),
   }),
 ]);
 export type RegistryDescriptor = z.infer<typeof RegistryDescriptorSchema>;
@@ -300,6 +314,7 @@ export const ModuleContractSchema = z.strictObject({
     events: {},
   }),
   routines: z.array(routineSpec).max(50).default([]),
+  planTemplates: z.array(PlanTemplateContractSchema).max(100).default([]),
   ui: ModuleUiMetadataSchema.optional(),
   docs: z.strictObject({ context: text(200) }).optional(),
 });
@@ -328,6 +343,7 @@ export interface ModuleContractIssue {
     | "docs_path"
     | "dependency"
     | "layer"
+    | "template"
     | "system_role_preset"
     | "unclassified_text_column";
   readonly message: string;
@@ -414,6 +430,9 @@ export function checkRegistryDescriptor(raw: unknown): {
       add("basePack.packageId", "A pack cannot extend itself");
     if (descriptor.basePack && !isValidVersionRange(descriptor.basePack.versionRange))
       add("basePack.versionRange", "Invalid semantic version range");
+  } else if (descriptor.kind === "template") {
+    if (descriptor.targetPack && !isValidVersionRange(descriptor.targetPack.versionRange))
+      add("targetPack.versionRange", "Invalid semantic version range");
   }
   const seenDependencies = new Set<string>();
   descriptor.dependencies.forEach((dependency, index) => {
@@ -460,8 +479,10 @@ export function checkDependencyLayers(
   const descriptors = [descriptor, ...dependencyDescriptors];
   type ModuleDescriptor = Extract<RegistryDescriptor, { kind: "module" }>;
   type PackDescriptor = Extract<RegistryDescriptor, { kind: "pack" }>;
+  type TemplateDescriptor = Extract<RegistryDescriptor, { kind: "template" }>;
   const modules = new Map<string, ModuleDescriptor>();
   const packs = new Map<string, PackDescriptor>();
+  const templates = new Map<string, TemplateDescriptor>();
 
   for (const [index, candidate] of descriptors.entries()) {
     const checked = checkRegistryDescriptor(candidate);
@@ -486,6 +507,13 @@ export function checkDependencyLayers(
           `More than one selected version of pack ${candidate.moduleId} was supplied`,
         );
       else packs.set(candidate.moduleId, candidate);
+    } else if (candidate.kind === "template") {
+      if (templates.has(candidate.moduleId))
+        add(
+          index === 0 ? "moduleId" : `dependencyDescriptors.${index - 1}.moduleId`,
+          `More than one selected version of template package ${candidate.moduleId} was supplied`,
+        );
+      else templates.set(candidate.moduleId, candidate);
     }
   }
 
@@ -569,6 +597,26 @@ export function checkDependencyLayers(
       }
     } else {
       packEdges.set(pack.moduleId, []);
+    }
+  }
+
+  for (const template of templates.values()) {
+    const templatePath =
+      template.moduleId === descriptor.moduleId
+        ? ""
+        : `dependencyDescriptors.${dependencyDescriptors.findIndex((item) => item.moduleId === template.moduleId)}.`;
+    for (const [index, dependency] of template.dependencies.entries()) {
+      if (!modules.has(dependency.moduleId))
+        add(
+          `${templatePath}dependencies.${index}`,
+          `Required module ${dependency.moduleId} is missing from the selected descriptor set`,
+        );
+    }
+    if (template.targetPack && !packs.has(template.targetPack.packageId)) {
+      add(
+        `${templatePath}targetPack`,
+        `Target pack ${template.targetPack.packageId} is missing from the selected descriptor set`,
+      );
     }
   }
 
@@ -830,6 +878,37 @@ export function checkModuleContract(raw: unknown): {
           "need",
           `${need}: use <id>:call, <id>:read, <table>:write, connection:<id>:use, net:<host> or provider:<slot>`,
         );
+    }
+  });
+
+  const templateIds = new Set<string>();
+  c.planTemplates.forEach((tpl, index) => {
+    const path = `planTemplates.${index}`;
+    if (!owns(tpl.id)) add(`${path}.id`, "prefix", `Plan template ids must start with ${c.id}.`);
+    if (templateIds.has(tpl.id))
+      add(`${path}.id`, "duplicate", `Duplicate plan template id ${tpl.id}`);
+    templateIds.add(tpl.id);
+    for (const issue of checkPlanTemplatePlaceholders(tpl, path))
+      add(issue.path, "template", issue.message);
+    let callsExternal = false;
+    tpl.steps.forEach((step, stepIndex) => {
+      const ownCmd = c.access.commands[step.operationId];
+      if (!ownCmd) return;
+      if (ownCmd.visibility === "private" || effectiveAiLevel(ownCmd) === "never") {
+        add(
+          `${path}.steps.${stepIndex}.operationId`,
+          "template",
+          `Plan template step cannot call private or user-only command ${step.operationId}`,
+        );
+      }
+      if (ownCmd.effect === "submit") callsExternal = true;
+    });
+    if (callsExternal && !tpl.hasExternalEffects) {
+      add(
+        `${path}.hasExternalEffects`,
+        "template",
+        "Procedures calling external submit commands must set hasExternalEffects: true",
+      );
     }
   });
 
