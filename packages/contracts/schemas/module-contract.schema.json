@@ -681,11 +681,51 @@
             "additionalProperties": false
           }
         },
+        "sidePanels": {
+          "default": [],
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 90
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 600
+              },
+              "requiredCapabilities": {
+                "default": [],
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*:[a-z0-9_.:-]{1,80}$"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "requiredCapabilities"
+            ],
+            "additionalProperties": false
+          }
+        },
         "slots": {
           "default": {
             "homeCards": [],
             "settingsCards": [],
-            "reviewCards": []
+            "reviewCards": [],
+            "monitoringWidgets": []
           },
           "type": "object",
           "properties": {
@@ -805,12 +845,52 @@
                 ],
                 "additionalProperties": false
               }
+            },
+            "monitoringWidgets": {
+              "default": [],
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 90
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 600
+                  },
+                  "requiredCapabilities": {
+                    "default": [],
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_]*:[a-z0-9_.:-]{1,80}$"
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "title",
+                  "requiredCapabilities"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "required": [
             "homeCards",
             "settingsCards",
-            "reviewCards"
+            "reviewCards",
+            "monitoringWidgets"
           ],
           "additionalProperties": false
         }
@@ -818,6 +898,7 @@
       "required": [
         "screens",
         "navLinks",
+        "sidePanels",
         "slots"
       ],
       "additionalProperties": false

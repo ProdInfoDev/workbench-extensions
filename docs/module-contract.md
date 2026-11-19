@@ -103,10 +103,14 @@ refinements and may be added in later module versions.
     "navLinks": [
       { "id": "x_shop.customers-link", "route": "/parties", "title": "Customers", "navGroup": "Sales", "requiredCapabilities": ["x_shop:read"] }
     ],
+    "sidePanels": [
+      { "id": "x_shop.panel.orders", "title": "Order watchlist", "requiredCapabilities": ["x_shop:read"] }
+    ],
     "slots": {
-      "homeCards":     [{ "id": "x_shop.home.orders",     "title": "Orders summary",   "requiredCapabilities": ["x_shop:read"] }],
-      "settingsCards": [{ "id": "x_shop.settings.policy", "title": "Shop preferences", "requiredCapabilities": ["x_shop:write"] }],
-      "reviewCards":   [{ "id": "x_shop.review.pending",  "title": "Pending orders",   "requiredCapabilities": ["x_shop:write"] }]
+      "homeCards":         [{ "id": "x_shop.home.orders",         "title": "Orders summary",   "requiredCapabilities": ["x_shop:read"] }],
+      "settingsCards":     [{ "id": "x_shop.settings.policy",     "title": "Shop preferences", "requiredCapabilities": ["x_shop:write"] }],
+      "reviewCards":       [{ "id": "x_shop.review.pending",      "title": "Pending orders",   "requiredCapabilities": ["x_shop:write"] }],
+      "monitoringWidgets": [{ "id": "x_shop.monitor.deliveries",  "title": "Deliveries",       "requiredCapabilities": ["x_shop:read"] }]
     }
   },
   "docs": { "context": "docs/context.md" }
@@ -132,7 +136,8 @@ refinements and may be added in later module versions.
 | `access.events.*.notification` | User-facing event kind, severity and payload shape. The event's `subscribe` roles govern who may attach automation to it. |
 | `ui.displayName` | Optional human-readable module name used by the host when it labels module-owned items. |
 | `ui.screens` / `ui.navLinks` | Screens and cross-group navigation links contributed to the host's common shell menu groups (`navGroup`), filtered by `requiredCapabilities`. Screen routes may contain whole-segment `:name` parameters; parameterized screens are routable but hidden from navigation and command search. `hidden: true` hides a fixed screen from those lists too. |
-| `ui.slots.{homeCards,settingsCards,reviewCards}` | Cards contributed to the host's Home dashboard, Settings page, and Review queue, filtered by `requiredCapabilities`. |
+| `ui.sidePanels` | Custom workbench left-rail side panels contributed by the module, filtered by `requiredCapabilities`. |
+| `ui.slots.{homeCards,settingsCards,reviewCards,monitoringWidgets}` | Cards contributed to the host's Home dashboard, Settings page, Review queue, and Monitoring side panel, filtered by `requiredCapabilities`. |
 
 Anything not declared is readable by `owner` only and writable by nobody but the module's own code.
 Public views are readable by `viewer` and `member` unless the module narrows them. A `viewer` can

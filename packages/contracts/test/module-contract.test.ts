@@ -59,6 +59,8 @@ test("the reference declaration is valid and keeps its public/private split", ()
   const contract = parseModuleContract(valid());
   assert.equal(contract.access.commands["x_shop.order.purge"]?.visibility, "private");
   assert.equal(contract.ui?.slots.homeCards[0]?.id, "x_shop.home.orders");
+  assert.equal(contract.ui?.slots.monitoringWidgets[0]?.id, "x_shop.monitor.deliveries");
+  assert.equal(contract.ui?.sidePanels[0]?.id, "x_shop.panel.orders");
   assert.equal(contract.ui?.displayName, "Shop");
   assert.deepEqual(contract.ui?.screens[1], {
     id: "x_shop.order-detail",
@@ -402,6 +404,17 @@ test("UI metadata: ids, routes and capabilities stay inside the module and off h
   );
   assert.ok(ui((m) => (m.ui.screens[0].requiredCapabilities = ["ar:read"])).includes("capability"));
   assert.ok(ui((m) => (m.ui.slots.homeCards[0].id = "other.card")).includes("prefix"));
+  assert.ok(ui((m) => (m.ui.slots.monitoringWidgets[0].id = "other.widget")).includes("prefix"));
+  assert.ok(
+    ui((m) => (m.ui.slots.monitoringWidgets[0].requiredCapabilities = ["ar:read"])).includes(
+      "capability",
+    ),
+  );
+  assert.ok(ui((m) => (m.ui.sidePanels[0].id = "other.panel")).includes("prefix"));
+  assert.ok(
+    ui((m) => (m.ui.sidePanels[0].requiredCapabilities = ["ar:read"])).includes("capability"),
+  );
+  assert.ok(ui((m) => (m.ui.sidePanels[0].id = "x_shop.orders")).includes("duplicate"));
   assert.ok(ui((m) => (m.ui.navLinks[0].id = "x_shop.orders")).includes("duplicate"));
   // A nav link may point at another module's screen; only host routes are off limits.
   assert.deepEqual(

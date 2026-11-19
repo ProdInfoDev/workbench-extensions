@@ -172,19 +172,32 @@ const navLinkSpec = z.strictObject({
   navGroup: text(60).optional(),
   requiredCapabilities: z.array(capability).max(10).default([]),
 });
+const sidePanelSpec = z.strictObject({
+  id: dotted,
+  title: text(90),
+  description: text(600).optional(),
+  requiredCapabilities: z.array(capability).max(10).default([]),
+});
 
 /** Declarative UI contribution to the host shell. Components live in the module's UI bundle. */
 export const ModuleUiMetadataSchema = z.strictObject({
   displayName: text(90).optional(),
   screens: z.array(screenSpec).max(50).default([]),
   navLinks: z.array(navLinkSpec).max(50).default([]),
+  sidePanels: z.array(sidePanelSpec).max(10).default([]),
   slots: z
     .strictObject({
       homeCards: z.array(cardSpec).max(20).default([]),
       settingsCards: z.array(cardSpec).max(20).default([]),
       reviewCards: z.array(cardSpec).max(20).default([]),
+      monitoringWidgets: z.array(cardSpec).max(20).default([]),
     })
-    .default({ homeCards: [], settingsCards: [], reviewCards: [] }),
+    .default({
+      homeCards: [],
+      settingsCards: [],
+      reviewCards: [],
+      monitoringWidgets: [],
+    }),
 });
 
 /** Where a fork came from. The original is never edited in place. */
@@ -879,7 +892,13 @@ export function checkModuleContract(raw: unknown): {
       unique(`${path}.id`, link.id);
       caps(`${path}.requiredCapabilities`, link.requiredCapabilities);
     });
-    for (const slot of ["homeCards", "settingsCards", "reviewCards"] as const)
+    c.ui.sidePanels.forEach((panel, i) => {
+      const path = `ui.sidePanels.${i}`;
+      if (!owns(panel.id)) add(`${path}.id`, "prefix", `Side panel ids must start with ${c.id}.`);
+      unique(`${path}.id`, panel.id);
+      caps(`${path}.requiredCapabilities`, panel.requiredCapabilities);
+    });
+    for (const slot of ["homeCards", "settingsCards", "reviewCards", "monitoringWidgets"] as const)
       c.ui.slots[slot].forEach((card, i) => {
         const path = `ui.slots.${slot}.${i}`;
         if (!owns(card.id)) add(`${path}.id`, "prefix", `Card ids must start with ${c.id}.`);

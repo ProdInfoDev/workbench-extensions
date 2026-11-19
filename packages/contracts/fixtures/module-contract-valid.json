@@ -148,6 +148,13 @@
         "requiredCapabilities": ["x_shop:read"]
       }
     ],
+    "sidePanels": [
+      {
+        "id": "x_shop.panel.orders",
+        "title": "Order watchlist",
+        "requiredCapabilities": ["x_shop:read"]
+      }
+    ],
     "slots": {
       "homeCards": [
         { "id": "x_shop.home.orders", "title": "Orders summary", "requiredCapabilities": ["x_shop:read"] }
@@ -157,6 +164,9 @@
       ],
       "reviewCards": [
         { "id": "x_shop.review.pending", "title": "Pending orders", "requiredCapabilities": ["x_shop:write"] }
+      ],
+      "monitoringWidgets": [
+        { "id": "x_shop.monitor.deliveries", "title": "Deliveries", "requiredCapabilities": ["x_shop:read"] }
       ]
     }
   },
