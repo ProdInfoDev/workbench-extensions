@@ -289,6 +289,31 @@ export const SignedRegistryDescriptorSchema = z.strictObject({
 });
 export type SignedRegistryDescriptor = z.infer<typeof SignedRegistryDescriptorSchema>;
 
+export const OBJECT_STORAGE_DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
+export const OBJECT_STORAGE_MAX_BYTES_CAP = 256 * 1024 * 1024;
+
+export const ObjectStorageContractSchema = z.strictObject({
+  mediaTypes: z
+    .array(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .min(3)
+        .max(127)
+        .regex(/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/),
+    )
+    .min(1)
+    .max(100),
+  maxBytes: z
+    .number()
+    .int()
+    .min(1)
+    .max(OBJECT_STORAGE_MAX_BYTES_CAP)
+    .default(OBJECT_STORAGE_DEFAULT_MAX_BYTES),
+});
+export type ObjectStorageContract = z.output<typeof ObjectStorageContractSchema>;
+
 export const ModuleContractSchema = z.strictObject({
   id: moduleId,
   version,
@@ -315,6 +340,7 @@ export const ModuleContractSchema = z.strictObject({
   }),
   routines: z.array(routineSpec).max(50).default([]),
   planTemplates: z.array(PlanTemplateContractSchema).max(100).default([]),
+  objectStorage: ObjectStorageContractSchema.optional(),
   ui: ModuleUiMetadataSchema.optional(),
   docs: z.strictObject({ context: text(200) }).optional(),
 });
@@ -765,6 +791,14 @@ export function checkModuleContract(raw: unknown): {
     if (base.moduleId === c.id) add("extends", "dependency", "A module cannot extend itself");
     if (dependencies.has(base.moduleId))
       add("extends", "duplicate", "The base module in extends must not also appear in depends");
+  }
+  if (c.objectStorage) {
+    const seenMediaTypes = new Set<string>();
+    c.objectStorage.mediaTypes.forEach((mediaType, index) => {
+      if (seenMediaTypes.has(mediaType))
+        add(`objectStorage.mediaTypes.${index}`, "duplicate", `Duplicate media type ${mediaType}`);
+      seenMediaTypes.add(mediaType);
+    });
   }
   if (c.systemRolePresets) {
     for (const role of ["member", "viewer"] as const) {

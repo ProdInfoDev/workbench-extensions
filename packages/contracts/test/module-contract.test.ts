@@ -452,6 +452,30 @@ test("forks: own x_ id, recorded origin, only from open source with an open lice
   assert.equal(canForkModule({ license: "MIT", source: "closed" }), false);
 });
 
+test("objectStorage declaration validates mediaTypes and defaults maxBytes to 25 MiB", () => {
+  const checked = checkModuleContract({
+    ...valid(),
+    objectStorage: { mediaTypes: ["application/pdf", "IMAGE/PNG"] },
+  });
+  assert.equal(checked.valid, true);
+  assert.deepEqual(checked.contract?.objectStorage, {
+    mediaTypes: ["application/pdf", "image/png"],
+    maxBytes: 25 * 1024 * 1024,
+  });
+  const dup = checkModuleContract({
+    ...valid(),
+    objectStorage: { mediaTypes: ["application/pdf", "application/pdf"], maxBytes: 1024 },
+  });
+  assert.equal(dup.valid, false);
+  assert.ok(codes(dup.issues).includes("duplicate"));
+  const bad = checkModuleContract({
+    ...valid(),
+    objectStorage: { mediaTypes: ["not-a-mime-type"] },
+  });
+  assert.equal(bad.valid, false);
+  assert.ok(codes(bad.issues).includes("schema"));
+});
+
 test("unknown fields and unbounded input are refused", () => {
   assert.equal(checkModuleContract({ ...valid(), secret: 1 }).valid, false);
   assert.throws(() => parseModuleContract({ ...valid(), id: "Bad Id" }), /Invalid module contract/);

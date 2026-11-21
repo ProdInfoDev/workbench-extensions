@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.14";
+export const CONTRACT_VERSION = "0.1.0-alpha.15";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -142,6 +142,9 @@ export {
   LISTABLE_SYSTEM_ROLES,
   ModuleContractSchema,
   ModuleUiMetadataSchema,
+  OBJECT_STORAGE_DEFAULT_MAX_BYTES,
+  OBJECT_STORAGE_MAX_BYTES_CAP,
+  ObjectStorageContractSchema,
   ProvenanceSchema,
   RESERVED_ROUTE_PREFIXES,
   RegistryDescriptorSchema,
@@ -166,6 +169,7 @@ export {
   type ModuleLayer,
   type ModuleNotificationMetadata,
   type ModuleUiMetadata,
+  type ObjectStorageContract,
   type RegistryDescriptor,
   type RegistryDescriptorIssue,
   type RegistryPackageKind,

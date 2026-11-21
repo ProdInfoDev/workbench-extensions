@@ -930,6 +930,33 @@
         "additionalProperties": false
       }
     },
+    "objectStorage": {
+      "type": "object",
+      "properties": {
+        "mediaTypes": {
+          "minItems": 1,
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 127,
+            "pattern": "^[a-z0-9!#$&^_.+-]+\\/[a-z0-9!#$&^_.+-]+$"
+          }
+        },
+        "maxBytes": {
+          "default": 26214400,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 268435456
+        }
+      },
+      "required": [
+        "mediaTypes",
+        "maxBytes"
+      ],
+      "additionalProperties": false
+    },
     "ui": {
       "type": "object",
       "properties": {
