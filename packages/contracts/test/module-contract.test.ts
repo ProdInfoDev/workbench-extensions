@@ -476,6 +476,30 @@ test("objectStorage declaration validates mediaTypes and defaults maxBytes to 25
   assert.ok(codes(bad.issues).includes("schema"));
 });
 
+test("ai declaration validates purposes and defaults maxTokensPerCall", () => {
+  const checked = checkModuleContract({
+    ...valid(),
+    ai: { purposes: ["classification", "invoice_reading"] },
+  });
+  assert.equal(checked.valid, true);
+  assert.deepEqual(checked.contract?.ai, {
+    purposes: ["classification", "invoice_reading"],
+    maxTokensPerCall: 16_000,
+  });
+  const dup = checkModuleContract({
+    ...valid(),
+    ai: { purposes: ["classification", "classification"], maxTokensPerCall: 4000 },
+  });
+  assert.equal(dup.valid, false);
+  assert.ok(codes(dup.issues).includes("duplicate"));
+  const bad = checkModuleContract({
+    ...valid(),
+    ai: { purposes: [] },
+  });
+  assert.equal(bad.valid, false);
+  assert.ok(codes(bad.issues).includes("schema"));
+});
+
 test("unknown fields and unbounded input are refused", () => {
   assert.equal(checkModuleContract({ ...valid(), secret: 1 }).valid, false);
   assert.throws(() => parseModuleContract({ ...valid(), id: "Bad Id" }), /Invalid module contract/);

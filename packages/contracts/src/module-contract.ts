@@ -314,6 +314,27 @@ export const ObjectStorageContractSchema = z.strictObject({
 });
 export type ObjectStorageContract = z.output<typeof ObjectStorageContractSchema>;
 
+export const AI_CONTRACT_DEFAULT_MAX_TOKENS_PER_CALL = 16_000;
+export const AI_CONTRACT_MAX_TOKENS_PER_CALL_CAP = 128_000;
+
+const aiPurposeId = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .regex(/^[a-z][a-z0-9_.:-]*$/);
+
+export const AiContractSchema = z.strictObject({
+  purposes: z.array(aiPurposeId).min(1).max(50),
+  maxTokensPerCall: z
+    .number()
+    .int()
+    .min(1)
+    .max(AI_CONTRACT_MAX_TOKENS_PER_CALL_CAP)
+    .default(AI_CONTRACT_DEFAULT_MAX_TOKENS_PER_CALL),
+});
+export type AiContract = z.output<typeof AiContractSchema>;
+
 export const ModuleContractSchema = z.strictObject({
   id: moduleId,
   version,
@@ -341,6 +362,7 @@ export const ModuleContractSchema = z.strictObject({
   routines: z.array(routineSpec).max(50).default([]),
   planTemplates: z.array(PlanTemplateContractSchema).max(100).default([]),
   objectStorage: ObjectStorageContractSchema.optional(),
+  ai: AiContractSchema.optional(),
   ui: ModuleUiMetadataSchema.optional(),
   docs: z.strictObject({ context: text(200) }).optional(),
 });
@@ -798,6 +820,14 @@ export function checkModuleContract(raw: unknown): {
       if (seenMediaTypes.has(mediaType))
         add(`objectStorage.mediaTypes.${index}`, "duplicate", `Duplicate media type ${mediaType}`);
       seenMediaTypes.add(mediaType);
+    });
+  }
+  if (c.ai) {
+    const seenPurposes = new Set<string>();
+    c.ai.purposes.forEach((purpose, index) => {
+      if (seenPurposes.has(purpose))
+        add(`ai.purposes.${index}`, "duplicate", `Duplicate AI purpose ${purpose}`);
+      seenPurposes.add(purpose);
     });
   }
   if (c.systemRolePresets) {

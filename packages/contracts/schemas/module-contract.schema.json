@@ -957,6 +957,33 @@
       ],
       "additionalProperties": false
     },
+    "ai": {
+      "type": "object",
+      "properties": {
+        "purposes": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "pattern": "^[a-z][a-z0-9_.:-]*$"
+          }
+        },
+        "maxTokensPerCall": {
+          "default": 16000,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128000
+        }
+      },
+      "required": [
+        "purposes",
+        "maxTokensPerCall"
+      ],
+      "additionalProperties": false
+    },
     "ui": {
       "type": "object",
       "properties": {

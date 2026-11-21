@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.15";
+export const CONTRACT_VERSION = "0.1.0-alpha.16";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -137,6 +137,10 @@ export {
   AI_AUTO_EFFECTS,
   AI_LEVELS,
   COLUMN_CLASSIFICATIONS,
+  AI_CONTRACT_DEFAULT_MAX_TOKENS_PER_CALL,
+  AI_CONTRACT_MAX_TOKENS_PER_CALL_CAP,
+  AiContractSchema,
+  type AiContract,
   COMMAND_EFFECTS,
   LibraryReferenceSchema,
   LISTABLE_SYSTEM_ROLES,
