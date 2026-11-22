@@ -245,3 +245,75 @@ test("module contract enforces planTemplates visibility and external-effect decl
   });
   assert.equal(ok.valid, true, ok.issues.map((i) => i.message).join("; "));
 });
+
+test("planTemplates support appliesTo.documentTypes and document parameters", () => {
+  const ok = checkTemplatePackageManifest({
+    id: "ar_helpers",
+    version: "1.0.0",
+    license: "MIT",
+    businessArea: "sales_and_receivables",
+    requires: [{ moduleId: "ar", versionRange: "^1.0.0" }],
+    planTemplates: [
+      {
+        id: "ar_helpers.write_off",
+        title: "Write off small balance",
+        appliesTo: { documentTypes: ["ar.invoice", "ar.credit_note"] },
+        parameters: [{ name: "document", type: "document" }],
+        steps: [
+          {
+            operationId: "gl.open_items.write_off",
+            input: { documentId: { $param: "document" } },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(ok.valid, true, ok.issues.map((i) => i.message).join("; "));
+
+  const dup = checkTemplatePackageManifest({
+    id: "ar_helpers",
+    version: "1.0.0",
+    license: "MIT",
+    businessArea: "sales_and_receivables",
+    requires: [{ moduleId: "ar", versionRange: "^1.0.0" }],
+    planTemplates: [
+      {
+        id: "ar_helpers.write_off",
+        title: "Write off small balance",
+        appliesTo: { documentTypes: ["ar.invoice", "ar.invoice"] },
+        parameters: [{ name: "document", type: "document" }],
+        steps: [
+          {
+            operationId: "gl.open_items.write_off",
+            input: { documentId: { $param: "document" } },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(dup.valid, false);
+  assert.ok(dup.issues.some((i) => i.path.includes("appliesTo.documentTypes")));
+
+  const badDocType = checkTemplatePackageManifest({
+    id: "ar_helpers",
+    version: "1.0.0",
+    license: "MIT",
+    businessArea: "sales_and_receivables",
+    requires: [{ moduleId: "ar", versionRange: "^1.0.0" }],
+    planTemplates: [
+      {
+        id: "ar_helpers.write_off",
+        title: "Write off small balance",
+        appliesTo: { documentTypes: ["invoice"] },
+        parameters: [{ name: "document", type: "document" }],
+        steps: [
+          {
+            operationId: "gl.open_items.write_off",
+            input: { documentId: { $param: "document" } },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(badDocType.valid, false);
+});

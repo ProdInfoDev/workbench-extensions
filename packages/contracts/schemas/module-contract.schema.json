@@ -612,6 +612,22 @@
               "e_commerce"
             ]
           },
+          "appliesTo": {
+            "type": "object",
+            "properties": {
+              "documentTypes": {
+                "minItems": 1,
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 120,
+                  "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_-]+)+$"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
           "triggers": {
             "default": [
               "manual"
@@ -788,7 +804,8 @@
                         "decimal",
                         "boolean",
                         "date",
-                        "month"
+                        "month",
+                        "document"
                       ]
                     },
                     "required": {
@@ -801,7 +818,6 @@
                   },
                   "required": [
                     "name",
-                    "label",
                     "type",
                     "required"
                   ],
@@ -852,7 +868,8 @@
                               "decimal",
                               "boolean",
                               "date",
-                              "month"
+                              "month",
+                              "document"
                             ]
                           },
                           "required": {
@@ -865,7 +882,6 @@
                         },
                         "required": [
                           "name",
-                          "label",
                           "type",
                           "required"
                         ],

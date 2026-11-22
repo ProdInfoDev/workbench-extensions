@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CONTRACT_VERSION = "0.1.0-alpha.16";
+export const CONTRACT_VERSION = "0.1.0-alpha.17";
 import { assertBoundedJson } from "./json.ts";
 export { LIMITS, assertBoundedJson, canonicalJson, type Json } from "./json.ts";
 
@@ -200,6 +200,7 @@ export {
   PackManifestSchema,
   PlanTemplateAllowedValueRuleSchema,
   PlanTemplateAmountRuleSchema,
+  PlanTemplateAppliesToSchema,
   PlanTemplateContractSchema,
   PlanTemplateFieldSchema,
   PlanTemplateParameterSchema,
@@ -212,6 +213,7 @@ export {
   checkTemplatePackageManifest,
   type BusinessArea,
   type PackManifest,
+  type PlanTemplateAppliesTo,
   type PlanTemplateContract,
   type PlanTemplateIssue,
   type PlanTemplateSuggestedLimits,

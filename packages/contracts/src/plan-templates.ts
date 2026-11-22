@@ -40,6 +40,7 @@ export const PLAN_TEMPLATE_SCALAR_TYPES = [
   "boolean",
   "date",
   "month",
+  "document",
 ] as const;
 
 export const PLAN_TEMPLATE_TRIGGER_KINDS = ["manual", "schedule", "event"] as const;
@@ -54,7 +55,7 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 
 export const PlanTemplateFieldSchema = z.strictObject({
   name: paramName,
-  label: text(80),
+  label: text(80).optional(),
   type: z.enum(PLAN_TEMPLATE_SCALAR_TYPES),
   required: z.boolean().default(true),
   default: z.json().optional(),
@@ -106,12 +107,19 @@ export const PlanTemplateSuggestedLimitsSchema = z.strictObject({
   allowedTriggers: z.array(text(160)).min(1).max(50).optional(),
 });
 
+export const PlanTemplateAppliesToSchema = z.strictObject({
+  documentTypes: z.array(dottedId.max(120)).min(1).max(50).optional(),
+});
+
+export type PlanTemplateAppliesTo = z.output<typeof PlanTemplateAppliesToSchema>;
+
 /** Declarative procedure contract declared inside a module, pack, or template package. */
 export const PlanTemplateContractSchema = z.strictObject({
   id: dottedId.max(120),
   title: text(120),
   description: z.string().trim().max(1000).default(""),
   businessArea: BusinessAreaSchema.optional(),
+  appliesTo: PlanTemplateAppliesToSchema.optional(),
   triggers: z.array(PlanTemplateTriggerKindSchema).min(1).max(3).default(["manual"]),
   schedule: text(120).optional(),
   hasExternalEffects: z.boolean().default(false),
@@ -195,6 +203,18 @@ export function checkPlanTemplatePlaceholders(
 ): PlanTemplateIssue[] {
   const issues: PlanTemplateIssue[] = [];
   const prefix = basePath ? `${basePath}.` : "";
+  if (template.appliesTo?.documentTypes) {
+    const seenTypes = new Set<string>();
+    for (const [docIdx, docType] of template.appliesTo.documentTypes.entries()) {
+      if (seenTypes.has(docType)) {
+        issues.push({
+          path: `${prefix}appliesTo.documentTypes.${docIdx}`,
+          message: `Duplicate document type ${docType}`,
+        });
+      }
+      seenTypes.add(docType);
+    }
+  }
   const byName = new Map<string, (typeof template.parameters)[number]>();
   for (const [index, param] of template.parameters.entries()) {
     if (byName.has(param.name)) {
